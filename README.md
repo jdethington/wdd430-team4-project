@@ -7,9 +7,23 @@
 
 ---
 
-## WatchList
+## Description
 
-WatchList is a web application that helps movie fans organize and manage the movies they want to watch and the movies they have already watched.
+**`WatchList`** is a web application that helps movie fans organize and manage the movies they want to watch and the movies they have already watched.
+
+---
+
+> ## Team Discussions
+>
+>> #### Branch Naming
+>>
+>> All work happens on **feature branches** named by feature or task (For example, `feature/user-auth`).
+>
+>> #### Code Standards
+>> 
+>> Agree on formatting rules before writing any code.
+>> 
+>> Use `ESLint` and `Pretter`
 
 ---
 
