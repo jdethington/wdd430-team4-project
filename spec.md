@@ -201,7 +201,7 @@ API responses MUST provide clear validation errors for invalid input, an authori
 
 ### Session 2026-09-05
 
-- Q: Which movie information provider should the implementation use first? -> A: Use an internal movie API for the initial release, then implement the Streaming Availability API by Movie of the Night, followed by TMDB.
+- Q: Which movie information provider should the implementation use first? -> A: Use an internal movie API for the initial release, then implement the Streaming Availability API by Movie of the Night, followed by TMDB(The Movie DataBase).
 - Q: Which authentication method should the initial release use? -> A: Email and password authentication.
 - Q: What should provide movie data for the initial internal API? -> A: A seeded movie catalog stored in the application database.
 - Q: Should watched status be reversible, and should there be an additional category? -> A: Category changes are reversible, with "Want to Watch," "Watched," and "Want to Rewatch" as the three collection categories.
