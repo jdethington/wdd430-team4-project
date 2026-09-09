@@ -3,7 +3,7 @@
 - Jacob Ethington - GitHub: [jdethington](https://github.com/jdethington)
 - Luthando Lwandile Ngombane - GitHub: [LuthandoNgombane](https://github.com/LuthandoNgombane)
 - Pamela Lynn Christison - GitHub: [kimchristian50](https://github.com/kimchristian50)
-- Peter Simon Bwire - GitHub:
+- Peter Simon Bwire - GitHub: [Elitefx755](https://github.com/Elitefx755)
 
 ---
 
