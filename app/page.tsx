@@ -48,7 +48,7 @@ export default function Home() {
         </h1>
 
         <p className="text-lg md:text-xl text-[#afb6c2] max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-          Replace scattered notes with a private, organized record of films you want to watch, films you have watched, ratings, and reviews.
+          Replace scattered notes with a private, organized record of films you want to watch, films you have watched, and films you want to watch again.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
