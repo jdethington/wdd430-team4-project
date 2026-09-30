@@ -5,50 +5,39 @@ import Button from '@/components/ui/Button';
 import Link from 'next/link';
 import { z } from 'zod';
 
-const SignupSchema = z.object({
-  name: z.string().min(1, 'Name is required.'),
+const LoginSchema = z.object({
   email: z.string()
     .min(1, 'Email is required.')
     .email('Please enter a valid email address.'),
   password: z.string().min(8, 'Password must be at least 8 characters.'),
-  confirmPassword: z.string().min(1, 'Please confirm your password.'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
 });
 
-export default function Signup() {
+export default function Login() {
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
     password: '',
-    confirmPassword: '',
   });
 
   const [errors, setErrors] = useState({
-    name: '',
     email: '',
     password: '',
-    confirmPassword: '',
   });
 
   const [submitted, setSubmitted] = useState(false);
 
   function validate() {
-    const result = SignupSchema.safeParse(formData);
+    const result = LoginSchema.safeParse(formData);
 
     if (result.success) {
-      setErrors({ name: '', email: '', password: '', confirmPassword: '' });
+      setErrors({ email: '', password: '' });
       return true;
     }
 
     // flatten() organizes errors by field name
     const fieldErrors = result.error.flatten().fieldErrors;
     setErrors({
-      name: fieldErrors.name?.[0] ?? '',
       email: fieldErrors.email?.[0] ?? '',
       password: fieldErrors.password?.[0] ?? '',
-      confirmPassword: fieldErrors.confirmPassword?.[0] ?? '',
     });
     return false;
   }
@@ -76,27 +65,20 @@ export default function Signup() {
         <div className="flex items-center justify-center gap-4 mb-8">
           <div className="h-[1px] w-12 bg-[#f5c518]" />
           <span className="text-[#f5c518] text-xs uppercase tracking-[0.3em] font-semibold">
-            Create an Account
+            Log in
           </span>
           <div className="h-[1px] w-12 bg-[#f5c518]" />
         </div>
-
-        <h1 className="text-3xl font-extrabold text-[#f5f5f4] tracking-wide text-center mb-2">
-          Join Watch<span className="text-[#f5c518]">List</span>
-        </h1>
 
         {/* Success state */}
         {submitted ? (
           <div className="bg-[#2c2c2c] border border-[#f5c518]/30 rounded-sm p-8 text-center">
             <p className="text-[#f5c518] text-lg font-semibold mb-2">
-              Account created!
+              Successfully logged in!
             </p>
             <p className="text-[#afb6c2] text-sm mb-6">
               (Backend wiring coming soon.)
             </p>
-            <Button href="/login" variant="primary">
-              Sign In
-            </Button>
           </div>
         ) : (
           <form
@@ -104,32 +86,6 @@ export default function Signup() {
             noValidate
             className="bg-[#2c2c2c] border border-[#2c2c2c] rounded-sm p-8 space-y-5 shadow-lg"
           >
-            {/* Name */}
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-[#afb6c2] mb-1.5 uppercase tracking-wider"
-              >
-                Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Your full name"
-                className={`block w-full bg-[#1a1a1a] border px-4 py-3 text-sm text-[#f5f5f4] placeholder-[#afb6c2]/40 rounded-sm focus:outline-none focus:ring-1 focus:ring-[#f5c518] transition-colors ${errors.name ? 'border-red-500' : 'border-[#afb6c2]/20 hover:border-[#afb6c2]/40'
-                  }`}
-                aria-describedby="name-error"
-              />
-              {errors.name && (
-                <p id="name-error" className="mt-1.5 text-xs text-red-400" aria-live="polite">
-                  {errors.name}
-                </p>
-              )}
-            </div>
 
             {/* Email */}
             <div>
@@ -170,10 +126,10 @@ export default function Signup() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="new-password"
+                autoComplete="current-password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="At least 8 characters"
+                placeholder="********"
                 className={`block w-full bg-[#1a1a1a] border px-4 py-3 text-sm text-[#f5f5f4] placeholder-[#afb6c2]/40 rounded-sm focus:outline-none focus:ring-1 focus:ring-[#f5c518] transition-colors ${errors.password ? 'border-red-500' : 'border-[#afb6c2]/20 hover:border-[#afb6c2]/40'
                   }`}
                 aria-describedby="password-error"
@@ -185,50 +141,23 @@ export default function Signup() {
               )}
             </div>
 
-            {/* Confirm Password */}
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-[#afb6c2] mb-1.5 uppercase tracking-wider"
-              >
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Repeat your password"
-                className={`block w-full bg-[#1a1a1a] border px-4 py-3 text-sm text-[#f5f5f4] placeholder-[#afb6c2]/40 rounded-sm focus:outline-none focus:ring-1 focus:ring-[#f5c518] transition-colors ${errors.confirmPassword ? 'border-red-500' : 'border-[#afb6c2]/20 hover:border-[#afb6c2]/40'
-                  }`}
-                aria-describedby="confirmPassword-error"
-              />
-              {errors.confirmPassword && (
-                <p id="confirmPassword-error" className="mt-1.5 text-xs text-red-400" aria-live="polite">
-                  {errors.confirmPassword}
-                </p>
-              )}
-            </div>
-
             {/* Submit */}
             <Button
               type="submit"
               variant="primary"
               className="w-full mt-2"
             >
-              Create Account
+              Log in
             </Button>
 
             {/* Sign in link */}
             <p className="text-center text-sm text-[#afb6c2] pt-2">
-              Already have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link
-                href="/login"
+                href="/signup"
                 className="text-[#f5c518] hover:underline font-medium"
               >
-                Sign in
+                Create one
               </Link>
             </p>
           </form>
