@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import { MongoServerError } from "mongodb";
 
 import { createUser, findUserByEmail } from "@/lib/users";
-import { createSession } from "@/lib/session";
 
 const SignupSchema = z.object({
   name: z.string().trim().min(1, "Name is required."),
@@ -64,8 +63,6 @@ export async function POST(request: Request) {
         { status: 500 },
       );
     }
-
-    await createSession(user._id.toString());
 
     return NextResponse.json(
       {
