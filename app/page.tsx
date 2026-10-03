@@ -1,8 +1,10 @@
 import Button from '@/components/ui/Button';
+import MovieList from '@/components/MovieList';
+import type { Movie } from '@/components/MovieCard';
 
 export default function Home() {
   // Temporary preview movies for unauthenticated visitors
-  const sampleMovies = [
+  const sampleMovies: Movie[] = [
     {
       id: 1,
       title: 'The Fellowship of the Ring',
@@ -64,49 +66,7 @@ export default function Home() {
       {/* Feature Preview Section */}
       <section className="py-16 bg-[#2c2c2c]/30 border-y border-[#2c2c2c]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-[#f5f5f4] mb-3">
-              Your Personal Vault - Preview
-            </h2>
-            <p className="text-[#afb6c2] max-w-xl mx-auto text-sm">
-              Keep your watchlist organized across three core categories.
-            </p>
-          </div>
-
-          {/* Sample Movie Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {sampleMovies.map((movie) => (
-              <div
-                key={movie.id}
-                className="bg-[#2c2c2c] border border-[#2c2c2c] hover:border-[#f5c518]/50 transition-all duration-300 p-6 rounded-sm flex flex-col justify-between group shadow-lg"
-              >
-                <div>
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="text-xs font-semibold text-[#f5c518] tracking-widest uppercase bg-[#1a1a1a] px-2.5 py-1 border border-[#f5c518]/20">
-                      {movie.category}
-                    </span>
-                    {movie.rating && (
-                      <span className="text-xs font-medium text-[#f5c518]">
-                        {movie.rating}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-2xl font-bold text-[#f5f5f4] group-hover:text-[#f5c518] transition-colors mb-1">
-                    {movie.title}
-                  </h3>
-                  <p className="text-xs text-[#afb6c2] mb-4">{movie.year}</p>
-                  <p className="text-sm text-[#afb6c2] line-clamp-3 leading-relaxed">
-                    {movie.summary}
-                  </p>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-[#1a1a1a] text-xs text-[#afb6c2]/70 italic">
-                  Sample Preview Card
-                </div>
-              </div>
-            ))}
-          </div>
+          <MovieList movies={sampleMovies} />
         </div>
       </section>
     </main>
