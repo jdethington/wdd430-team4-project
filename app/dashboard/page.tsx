@@ -1,11 +1,33 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import WatchlistManager from "@/components/WatchlistManager";
+import {
+  getUserWatchlist,
+  parseUserId,
+  toWatchlistEntryData,
+} from "@/lib/watchlist";
+import type { WatchlistEntryData } from "@/lib/watchlist";
 
 export default async function Dashboard() {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/login");
+  }
+
+  const userId = parseUserId(session.user.id);
+  if (!userId) {
+    redirect("/login");
+  }
+
+  let entries: WatchlistEntryData[] = [];
+  let loadError = false;
+
+  try {
+    entries = (await getUserWatchlist(userId)).map(toWatchlistEntryData);
+  } catch (error) {
+    console.error("Dashboard watchlist load error:", error);
+    loadError = true;
   }
 
   return (
@@ -23,19 +45,7 @@ export default async function Dashboard() {
           <p className="text-[#afb6c2] mt-3">Your personal movie dashboard.</p>
         </div>
 
-        <div className="bg-[#2c2c2c] border border-[#f5c518]/20 rounded-sm p-8">
-          <h2 className="text-xl font-semibold text-[#f5f5f4] mb-3">
-            Your WatchList
-          </h2>
-
-          <p className="text-[#afb6c2]">
-            You are signed in as {session.user.email}.
-          </p>
-
-          <p className="text-[#afb6c2] mt-2">
-            Your saved movies will appear here.
-          </p>
-        </div>
+        <WatchlistManager initialEntries={entries} initialLoadError={loadError} />
       </div>
     </main>
   );
