@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
       genre: Array.isArray(movie.genres)
         ? movie.genres.map((g: { name?: string }) => g.name).filter(Boolean).join(", ")
         : movie.genre ?? "",
-      imageSet: movie.imageSet ?? null,
+      // imageSet: movie.imageSet ?? null,
+      posterUrl: movie.imageSet?.verticalPoster?.w240 ?? null,
     }));
 
     return NextResponse.json({ movies: sanitizedMovies }, { status: 200 });
