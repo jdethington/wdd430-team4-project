@@ -41,7 +41,6 @@ export default async function Dashboard() {
           <h2 className="text-xl font-semibold text-[#f5f5f4] mb-3">
             Your Saved WatchList
           </h2>
-
           <p className="text-[#afb6c2]">
             You are signed in as {session?.user?.email}.
           </p>

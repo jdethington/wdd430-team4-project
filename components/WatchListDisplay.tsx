@@ -21,17 +21,14 @@ export default function Dashboard() {
     useEffect(() => {
         fetch('/api/watchlist')
             .then(res => {
-                console.log('Response status:', res.status);
                 if (!res.ok) throw new Error('Failed to load watchlist');
                 return res.json();
             })
             .then(data => {
-                console.log('Watchlist data:', data);
                 setWatchlist(data);
                 setLoading(false);
             })
-            .catch(() => {
-                console.error('Watchlist fetch error:', err);
+            .catch((err) => {
                 setError('Unable to load your watchlist. Please try again.');
                 setLoading(false);
             });
@@ -76,10 +73,11 @@ export default function Dashboard() {
                 {/* Header */}
                 <div>
                     <div className="flex items-center gap-4 mb-3">
-                        <div className="h-[1px] w-8 bg-[#f5c518]" />
+                        <div className="h-[1px] w-12 bg-[#f5c518]" />
                         <span className="text-[#f5c518] text-xs uppercase tracking-[0.3em] font-semibold">
                             Your Collection
                         </span>
+                        <div className="h-[1px] w-12 bg-[#f5c518]" />
                     </div>
                     <h1 className="font-serif text-4xl font-bold text-[#f5f5f4]">
                         My <span className="text-[#f5c518]">WatchList</span>

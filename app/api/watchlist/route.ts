@@ -61,11 +61,24 @@ export async function GET(request: Request) {
         // build a lookup map for quick access
         const movieMap = new Map(movies.map(m => [m.id, m]));
 
+        // helper to transform raw movie document to match MovieCard interface
+        const sanitizeMovie = (movie: any) => ({
+            _id: movie._id.toString(),
+            title: movie.title ?? "Untitled",
+            releaseYear: movie.releaseYear ?? null,
+            description: movie.overview ?? movie.description ?? "No description available.",
+            genre: Array.isArray(movie.genres)
+                ? movie.genres.map((g: { name?: string }) => g.name).filter(Boolean).join(", ")
+                : movie.genre ?? "",
+            posterUrl: movie.imageSet?.verticalPoster?.w240 ?? null,
+        });
+
         // helper to get movie details by id
         const getMovies = (ids: string[]) =>
             ids
                 .map(id => movieMap.get(id))
-                .filter(Boolean); // remove any undefined entries in case a movie ID in the watchlist doesn't exist in the movies collection
+                .filter(Boolean) // remove any undefined entries in case a movie ID in the watchlist doesn't exist in the movies collection
+                .map(sanitizeMovie);
 
         // if category filter requested, return only that category
         if (category) {
