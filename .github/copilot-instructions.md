@@ -72,19 +72,18 @@ The app uses a dark cinema theme inspired by IMDb/Letterboxd.
 }
 ```
 
-### WatchlistEntry
+### Watchlist (one document per user)
 ```typescript
 {
-  id: string;
-  userId: string;        // owner — enforce on every read/write/delete
-  movieId: string;
-  category: 'want-to-watch' | 'watched' | 'want-to-rewatch';
-  createdAt: Date;
-  updatedAt: Date;
+  userId: string;
+  wantToWatch: string[];  // movie provider ids
+  watched: string[];
+  rewatch: string[];
 }
 ```
 
-One user may have at most one WatchlistEntry per movie.
+- A user may have a given `movieId` in at most one of the three arrays.
+- Category = which array holds the id: `wantToWatch` | `watched` | `rewatch`.
 
 ## API Endpoints
 
@@ -117,7 +116,7 @@ unauthorized, 404 for missing entries (never expose another user's data).
 ## Validation Rules (Zod)
 - `rating`: `z.number().int().min(1).max(5).optional()`
 - `review`: `z.string().max(2000).optional()`
-- `category`: `z.enum(['want-to-watch', 'watched', 'want-to-rewatch'])`
+- `category`: `z.enum(['wantToWatch', 'watched', 'rewatch'])`
 - `email`: `z.string().email()`
 - Search query `q`: reject blank or whitespace-only strings before
   calling the movie service
