@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import MovieSearch from "@/components/MovieSearch";
-import WatchlistDisplay from '@/components/WatchListDisplay';
+import DashboardClient from "@/components/DashboardClient";
 
 export default async function Dashboard() {
   const session = await auth();
@@ -25,27 +24,7 @@ export default async function Dashboard() {
           <p className="text-[#afb6c2] mt-3">Your personal movie dashboard.</p>
         </div>
 
-        {/* Movie Search Section */}
-        <section className="bg-[#2c2c2c]/60 border border-[#f5c518]/20 rounded-lg p-6 sm:p-8">
-          <h2 className="text-xl font-semibold text-[#f5f5f4] mb-2">
-            Find Movies
-          </h2>
-          <p className="text-[#afb6c2] text-sm mb-6">
-            Search our collection and add titles to your personal watchlist.
-          </p>
-          <MovieSearch />
-        </section>
-
-        {/* Existing Watchlist Card */}
-        <section className="bg-[#2c2c2c] border border-[#f5c518]/20 rounded-lg p-8">
-          <h2 className="text-xl font-semibold text-[#f5f5f4] mb-3">
-            Your Saved WatchList
-          </h2>
-          <p className="text-[#afb6c2]">
-            You are signed in as {session?.user?.email}.
-          </p>
-          <WatchlistDisplay />
-        </section>
+        <DashboardClient />
       </div>
     </main>
   );

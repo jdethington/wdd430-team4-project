@@ -9,15 +9,15 @@ export async function GET(request: NextRequest) {
     if (!query) {
       return NextResponse.json(
         { error: "Search query parameter 'q' is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const db = await getDb();
 
-    // add an escape function for regex search  
+    // add an escape function for regex search
     const escapeRegex = (text: string) =>
-      text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+      text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 
     const movies = await db
       .collection("movies")
@@ -28,6 +28,10 @@ export async function GET(request: NextRequest) {
       .toArray();
 
     const sanitizedMovies = movies.map((movie) => ({
+      id:
+        typeof movie.id === "string" && movie.id.length > 0
+          ? movie.id
+          : movie._id.toString(),
       _id: movie._id.toString(),
       title: movie.title ?? "Untitled",
       releaseYear: movie.releaseYear ?? null,
@@ -37,18 +41,19 @@ export async function GET(request: NextRequest) {
         movie.summary ??
         "No description available.",
       genre: Array.isArray(movie.genres)
-        ? movie.genres.map((g: { name?: string }) => g.name).filter(Boolean).join(", ")
-        : movie.genre ?? "",
-      // imageSet: movie.imageSet ?? null,
+        ? movie.genres
+            .map((g: { name?: string }) => g.name)
+            .filter(Boolean)
+            .join(", ")
+        : (movie.genre ?? ""),
       posterUrl: movie.imageSet?.verticalPoster?.w240 ?? null,
     }));
-
     return NextResponse.json({ movies: sanitizedMovies }, { status: 200 });
   } catch (error) {
     console.error("Movie search error:", error);
     return NextResponse.json(
       { error: "Failed to search movies. Please try again." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

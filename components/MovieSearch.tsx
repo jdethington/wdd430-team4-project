@@ -2,8 +2,16 @@
 
 import { useState } from "react";
 import MovieCard, { Movie } from "./MovieCard";
+import { useWatchlist } from "@/components/WatchlistContext";
+
+function movieKey(movie: { id?: string; _id: string }): string {
+  return movie.id && movie.id.length > 0 ? movie.id : movie._id;
+}
 
 export default function MovieSearch() {
+  const { statusById, addMovieOptimistic, removeMovieOptimistic } =
+    useWatchlist();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [lastQuery, setLastQuery] = useState("");
   const [results, setResults] = useState<Movie[]>([]);
@@ -11,13 +19,18 @@ export default function MovieSearch() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const [addErrors, setAddErrors] = useState<Map<string, string>>(new Map());
+
   const fetchMovies = async (query: string) => {
     setLoading(true);
     setErrorMessage(null);
 
     try {
-      const response = await fetch(`/api/movies/search?q=${encodeURIComponent(query)}`);
-      
+      const response = await fetch(
+        `/api/movies/search?q=${encodeURIComponent(query)}`,
+      );
+
       if (!response.ok) {
         throw new Error("Unable to fetch movies at this time.");
       }
@@ -26,14 +39,12 @@ export default function MovieSearch() {
       setResults(data.movies || []);
       setHasSearched(true);
     } catch (err: unknown) {
-  
-        if (err instanceof Error) {
+      if (err instanceof Error) {
         setErrorMessage(err.message);
       } else {
         setErrorMessage("Something went wrong. Please try again.");
       }
-
-     } finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -41,19 +52,63 @@ export default function MovieSearch() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = searchTerm.trim();
-
-    // Acceptance criterion: Reject blank searches client-side before calling API
-    if (!trimmed) {
-      return;
-    }
-
+    if (!trimmed) return;
     setLastQuery(trimmed);
-    fetchMovies(trimmed);
+    void fetchMovies(trimmed);
   };
 
   const handleRetry = () => {
-    if (lastQuery) {
-      fetchMovies(lastQuery);
+    if (lastQuery) void fetchMovies(lastQuery);
+  };
+
+  const handleAdd = async (movie: Movie) => {
+    const id = movieKey(movie);
+
+    if (statusById.has(id)) return;
+
+    setAddErrors((prev) => {
+      const next = new Map(prev);
+      next.delete(id);
+      return next;
+    });
+
+    // Optimistic: updates search card status AND the list below
+    addMovieOptimistic(movie);
+    setAddingId(id);
+
+    try {
+      const res = await fetch("/api/watchlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ movieId: id }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 201 || res.status === 409) {
+        return;
+      }
+
+      removeMovieOptimistic(id);
+      setAddErrors((prev) => {
+        const next = new Map(prev);
+        next.set(
+          id,
+          typeof data.error === "string"
+            ? data.error
+            : "Could not add movie. Please try again.",
+        );
+        return next;
+      });
+    } catch {
+      removeMovieOptimistic(id);
+      setAddErrors((prev) => {
+        const next = new Map(prev);
+        next.set(id, "Network error. Please try again.");
+        return next;
+      });
+    } finally {
+      setAddingId(null);
     }
   };
 
@@ -101,7 +156,9 @@ export default function MovieSearch() {
       {/* Empty State */}
       {!loading && !errorMessage && hasSearched && results.length === 0 && (
         <div className="bg-[#2c2c2c] border border-white/5 rounded-md p-8 text-center">
-          <p className="text-[#f5f5f4] font-medium">No movies found matching &quot;{lastQuery}&quot;.</p>
+          <p className="text-[#f5f5f4] font-medium">
+            No movies found matching &quot;{lastQuery}&quot;.
+          </p>
           <p className="text-sm text-[#afb6c2] mt-1">
             Try checking for typos or searching for a different keyword.
           </p>
@@ -115,9 +172,19 @@ export default function MovieSearch() {
             Search Results ({results.length})
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {results.map((movie) => (
-              <MovieCard key={movie._id} movie={movie} />
-            ))}
+            {results.map((movie) => {
+              const id = movieKey(movie);
+              return (
+                <MovieCard
+                  key={movie._id}
+                  movie={movie}
+                  status={statusById.get(id) ?? null}
+                  isAdding={addingId === id}
+                  addError={addErrors.get(id) ?? null}
+                  onAdd={handleAdd}
+                />
+              );
+            })}
           </div>
         </div>
       )}
