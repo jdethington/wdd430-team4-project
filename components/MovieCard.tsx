@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export interface Movie {
   id?: string;
   _id: string;
@@ -42,9 +44,11 @@ export default function MovieCard({
     <div className="bg-[#2c2c2c] border border-[#f5c518]/20 rounded-md p-5 flex flex-col justify-between hover:border-[#f5c518]/50 transition-colors shadow-md">
       <div>
         {movie.posterUrl && (
-          <img
+          <Image
             src={movie.posterUrl}
             alt={`${movie.title} poster`}
+            width={500}
+            height={192}
             className="w-full h-48 object-cover rounded-md mb-3"
           />
         )}
