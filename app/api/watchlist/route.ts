@@ -4,10 +4,7 @@ import { MongoServerError, ObjectId } from "mongodb";
 
 import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
-import {
-  createWatchlistEntry,
-  findWatchlistEntry,
-} from "@/lib/watchlist";
+import { addMovieToWantToWatch } from "@/lib/watchlist";
 
 const AddToWatchlistSchema = z.object({
   movieId: z.string().trim().min(1, "movieId is required."),
@@ -16,9 +13,9 @@ const AddToWatchlistSchema = z.object({
 /**
  * POST /api/watchlist
  * Requires authentication.
- * Creates one WatchlistEntry with category want-to-watch.
- * Prevents duplicate entries for the same user + movie.
- * Returns the created entry.
+ * Adds movieId to the user's wantToWatch array.
+ * Prevents duplicates across wantToWatch / watched / rewatch.
+ * Returns the membership result.
  */
 export async function POST(request: Request) {
   try {
@@ -60,7 +57,7 @@ export async function POST(request: Request) {
 
     const { movieId } = parsed.data;
 
-    // Verify the movie exists in the catalog (by provider id or MongoDB _id).
+    // Verify movie exists (provider id or MongoDB _id).
     const db = await getDb();
     const movieQuery: Record<string, unknown>[] = [{ id: movieId }];
 
@@ -77,50 +74,36 @@ export async function POST(request: Request) {
       );
     }
 
-    // Prefer the stable provider id when available; fall back to MongoDB _id.
+    // Prefer stable provider id — GET looks up movies by `id`.
     const resolvedMovieId =
       typeof movie.id === "string" && movie.id.length > 0
         ? movie.id
         : movie._id.toString();
 
-    const existing = await findWatchlistEntry(userId, resolvedMovieId);
+    const result = await addMovieToWantToWatch(userId, resolvedMovieId);
 
-    if (existing) {
+    if (!result.created) {
       return NextResponse.json(
         {
           error: "This movie is already in your watchlist.",
-          entry: {
-            id: existing._id?.toString(),
-            userId: existing.userId,
-            movieId: existing.movieId,
-            category: existing.category,
-            createdAt: existing.createdAt,
-            updatedAt: existing.updatedAt,
-          },
+          userId,
+          movieId: resolvedMovieId,
+          category: result.category,
         },
         { status: 409 },
       );
     }
 
-    const entry = await createWatchlistEntry(
-      userId,
-      resolvedMovieId,
-      "want-to-watch",
-    );
-
     return NextResponse.json(
       {
-        id: entry._id?.toString(),
-        userId: entry.userId,
-        movieId: entry.movieId,
-        category: entry.category,
-        createdAt: entry.createdAt,
-        updatedAt: entry.updatedAt,
+        userId,
+        movieId: resolvedMovieId,
+        category: "wantToWatch",
       },
       { status: 201 },
     );
   } catch (error) {
-    // Race condition: two concurrent adds for the same user+movie.
+    // Concurrent first-create for the same user.
     if (error instanceof MongoServerError && error.code === 11000) {
       return NextResponse.json(
         { error: "This movie is already in your watchlist." },
