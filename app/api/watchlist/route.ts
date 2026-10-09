@@ -57,12 +57,30 @@ export async function GET(request: Request) {
                 .find({ id: { $in: allIds } })
                 .toArray()
             : [];
+        
+        type MovieDocument = {
+            _id: { toString: () => string };
+            title?: string;
+            releaseYear?: number | null;
+            overview?: string;
+            description?: string;
+            genres?: { name?: string }[];
+            genre?: string;
+            imageSet?: {
+                verticalPoster?: { w240?: string | null };
+            };
+        };
 
         // build a lookup map for quick access
-        const movieMap = new Map(movies.map(m => [m.id, m]));
+        const movieMap = new Map<string, MovieDocument>(
+            movies.map((movie) => [
+                String(movie.id),
+                movie as unknown as MovieDocument,
+            ]),
+        );
 
         // helper to transform raw movie document to match MovieCard interface
-        const sanitizeMovie = (movie: any) => ({
+        const sanitizeMovie = (movie: MovieDocument) => ({
             _id: movie._id.toString(),
             title: movie.title ?? "Untitled",
             releaseYear: movie.releaseYear ?? null,
@@ -77,7 +95,7 @@ export async function GET(request: Request) {
         const getMovies = (ids: string[]) =>
             ids
                 .map(id => movieMap.get(id))
-                .filter(Boolean) // remove any undefined entries in case a movie ID in the watchlist doesn't exist in the movies collection
+                .filter((movie): movie is MovieDocument => movie !== undefined)
                 .map(sanitizeMovie);
 
         // if category filter requested, return only that category

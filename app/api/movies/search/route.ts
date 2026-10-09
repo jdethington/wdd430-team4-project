@@ -15,10 +15,14 @@ export async function GET(request: NextRequest) {
 
     const db = await getDb();
 
+    // add an escape function for regex search  
+    const escapeRegex = (text: string) =>
+      text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+
     const movies = await db
       .collection("movies")
       .find({
-        title: { $regex: query, $options: "i" },
+        title: { $regex: escapeRegex(query), $options: "i" },
       })
       .limit(20)
       .toArray();

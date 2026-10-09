@@ -28,11 +28,11 @@ export default function Dashboard() {
                 setWatchlist(data);
                 setLoading(false);
             })
-            .catch((err) => {
+            .catch(() => {
                 setError('Unable to load your watchlist. Please try again.');
                 setLoading(false);
             });
-    }, []);
+    }, []); 
 
     if (loading) {
         return (
