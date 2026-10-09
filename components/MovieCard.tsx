@@ -46,6 +46,7 @@ export default function MovieCard({
             alt={`${movie.title} poster`}
             width={500}
             height={192}
+            loading="eager"
             className="w-full h-48 object-cover rounded-md mb-3"
             style={{ width: "100%", height: "auto" }}
           />
@@ -83,34 +84,36 @@ export default function MovieCard({
       </div>
 
       {/* Add / status controls */}
-      <div className="mt-4 space-y-2">
-        {alreadyInList ? (
-          <button
-            type="button"
-            disabled
-            className="w-full rounded-md border border-[#f5c518]/30 bg-[#1a1a1a] px-3 py-2 text-sm font-semibold text-[#f5c518] opacity-80 cursor-default"
-            aria-label={`${movie.title} is in your list: ${statusLabel(status)}`}
-          >
-            {statusLabel(status)}
-          </button>
-        ) : (
-          <button
-            type="button"
-            disabled={isAdding || !onAdd}
-            onClick={() => onAdd?.(movie)}
-            className="w-full rounded-md bg-[#f5c518] px-3 py-2 text-sm font-bold text-[#1a1a1a] hover:bg-[#f5c518]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#f5c518]"
-            aria-label={`Add ${movie.title} to watchlist`}
-          >
-            {isAdding ? "Adding..." : "Add"}
-          </button>
-        )}
+      {onAdd !== undefined && (
+        <div className="mt-4 space-y-2">
+          {alreadyInList ? (
+            <button
+              type="button"
+              disabled
+              className="w-full rounded-md border border-[#f5c518]/30 bg-[#1a1a1a] px-3 py-2 text-sm font-semibold text-[#f5c518] opacity-80 cursor-default"
+              aria-label={`${movie.title} is in your list: ${statusLabel(status)}`}
+            >
+              {statusLabel(status)}
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={isAdding}
+              onClick={() => onAdd(movie)}
+              className="w-full rounded-md bg-[#f5c518] px-3 py-2 text-sm font-bold text-[#1a1a1a] hover:bg-[#f5c518]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#f5c518]"
+              aria-label={`Add ${movie.title} to watchlist`}
+            >
+              {isAdding ? "Adding..." : "Add"}
+            </button>
+          )}
 
-        {addError && (
-          <p className="text-xs text-[#e50914]" role="alert">
-            {addError}
-          </p>
-        )}
-      </div>
+          {addError && (
+            <p className="text-xs text-[#e50914]" role="alert">
+              {addError}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

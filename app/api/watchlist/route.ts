@@ -75,6 +75,7 @@ export async function GET(request: Request) {
 
     type MovieDocument = {
       _id: { toString: () => string };
+      id?: string;
       title?: string;
       releaseYear?: number | null;
       overview?: string;
@@ -95,6 +96,7 @@ export async function GET(request: Request) {
 
     const sanitizeMovie = (movie: MovieDocument) => ({
       _id: movie._id.toString(),
+      id: String((movie as { id?: string }).id ?? movie._id.toString()), // provider id used in wantToWatch / watched / rewatch arrays
       title: movie.title ?? "Untitled",
       releaseYear: movie.releaseYear ?? null,
       description:
@@ -191,10 +193,7 @@ export async function POST(request: Request) {
     const movie = await db.collection("movies").findOne({ $or: movieQuery });
 
     if (!movie) {
-      return NextResponse.json(
-        { error: "Movie not found." },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Movie not found." }, { status: 404 });
     }
 
     const resolvedMovieId =

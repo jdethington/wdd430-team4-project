@@ -1,4 +1,6 @@
-// a TypeScript type declaration for the extended session so TypeScript knows session.user.id exists
+import "next-auth";
+
+// Extend the session type so TypeScript knows session.user.id exists.
 declare module "next-auth" {
   interface Session {
     user: {
