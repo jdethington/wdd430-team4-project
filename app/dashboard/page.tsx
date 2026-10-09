@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import MovieSearch from "@/components/MovieSearch";
+import WatchlistDisplay from '@/components/WatchListDisplay';
 
 export default async function Dashboard() {
   const session = await auth();
@@ -40,14 +41,10 @@ export default async function Dashboard() {
           <h2 className="text-xl font-semibold text-[#f5f5f4] mb-3">
             Your Saved WatchList
           </h2>
-
           <p className="text-[#afb6c2]">
             You are signed in as {session?.user?.email}.
           </p>
-
-          <p className="text-[#afb6c2] mt-2">
-            Your saved movies will appear here.
-          </p>
+          <WatchlistDisplay />
         </section>
       </div>
     </main>

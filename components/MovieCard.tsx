@@ -4,6 +4,7 @@ export interface Movie {
   releaseYear?: number | null;
   description: string;
   genre?: string;
+  posterUrl?: string | null;
 }
 
 interface MovieCardProps {
@@ -14,6 +15,13 @@ export default function MovieCard({ movie }: MovieCardProps) {
   return (
     <div className="bg-[#2c2c2c] border border-[#f5c518]/20 rounded-md p-5 flex flex-col justify-between hover:border-[#f5c518]/50 transition-colors shadow-md">
       <div>
+        {movie.posterUrl && (
+          <img
+            src={movie.posterUrl}
+            alt={`${movie.title} poster`}
+            className="w-full h-48 object-cover rounded-md mb-3"
+          />
+        )}
         <div className="flex justify-between items-start gap-2 mb-2">
           <h3 className="font-serif text-lg font-bold text-[#f5f5f4] leading-tight">
             {movie.title}
