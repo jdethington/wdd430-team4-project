@@ -108,11 +108,11 @@ export default function MovieCard({
       {onStatusChange && currentStatus && (
         <div className="mt-4 pt-3 border-t border-[#f5c518]/10 flex items-center justify-between gap-2">
           <div className="flex-1">
-            <label htmlFor={`status-${movie._id || movie.id}`} className="sr-only">
+            <label htmlFor={`status-${movie.id || movie._id}`} className="sr-only">
               Change Status
             </label>
             <select
-              id={`status-${movie._id || movie.id}`}
+              id={`status-${movie.id || movie._id}`}
               value={currentStatus}
               disabled={isUpdatingStatus}
               onChange={(e) =>
