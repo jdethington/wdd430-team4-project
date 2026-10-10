@@ -132,8 +132,6 @@ lib/
 
 - Movie catalog is currently seeded with 29 films — future versions would connect to a live movie API
 - Watchlist categories are fixed (Want to Watch, Watched, Rewatch) — future versions could support custom lists
-- No ability to move movies between categories yet
-- User Story 4 (edit watchlist entries) and User Story 5 (delete with ownership check) are partially implemented
 
 ---
 
