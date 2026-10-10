@@ -19,6 +19,11 @@ export interface WatchlistData {
   rewatch: Movie[];
 }
 
+export interface ReviewData {
+  rating?: number;
+  review?: string;
+}
+
 interface WatchlistContextValue {
   watchlist: WatchlistData;
   loading: boolean;
@@ -28,8 +33,18 @@ interface WatchlistContextValue {
   refresh: () => Promise<void>;
   /** After a successful Add: put movie in wantToWatch locally */
   addMovieOptimistic: (movie: Movie) => void;
-  /** Undo optimistic add on failure */
+  /** Undo optimistic add on failure or deletion */
   removeMovieOptimistic: (movieId: string) => void;
+  /** Smoothly transfer a movie between categories locally */
+  updateMovieCategoryOptimistic: (
+    movieId: string,
+    newCategory: WatchlistCategory
+  ) => void;
+  /** Update movie rating and review notes locally */
+  updateMovieReviewOptimistic: (
+    movieId: string,
+    reviewData: ReviewData
+  ) => void;
 }
 
 const WatchlistContext = createContext<WatchlistContextValue | null>(null);
@@ -98,7 +113,6 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     if (!id) return;
 
     setWatchlist((prev) => {
-      // already somewhere?
       const all = [...prev.wantToWatch, ...prev.watched, ...prev.rewatch];
       if (all.some((m) => movieKey(m) === id)) return prev;
 
@@ -117,6 +131,52 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const updateMovieCategoryOptimistic = useCallback(
+    (movieId: string, newCategory: WatchlistCategory) => {
+      setWatchlist((prev) => {
+        // Locate target item from whichever section it is in
+        const all = [...prev.wantToWatch, ...prev.watched, ...prev.rewatch];
+        const targetMovie = all.find((m) => movieKey(m) === movieId);
+        if (!targetMovie) return prev;
+
+        // Remove from all existing sections
+        const filtered: WatchlistData = {
+          wantToWatch: prev.wantToWatch.filter((m) => movieKey(m) !== movieId),
+          watched: prev.watched.filter((m) => movieKey(m) !== movieId),
+          rewatch: prev.rewatch.filter((m) => movieKey(m) !== movieId),
+        };
+
+        // Add to destination section with updated status
+        return {
+          ...filtered,
+          [newCategory]: [
+            ...filtered[newCategory],
+            { ...targetMovie, status: newCategory },
+          ],
+        };
+      });
+    },
+    []
+  );
+
+  const updateMovieReviewOptimistic = useCallback(
+    (movieId: string, reviewData: ReviewData) => {
+      setWatchlist((prev) => {
+        const updateList = (list: Movie[]) =>
+          list.map((m) =>
+            movieKey(m) === movieId ? { ...m, ...reviewData } : m
+          );
+
+        return {
+          wantToWatch: updateList(prev.wantToWatch),
+          watched: updateList(prev.watched),
+          rewatch: updateList(prev.rewatch),
+        };
+      });
+    },
+    []
+  );
+
   const value: WatchlistContextValue = {
     watchlist,
     loading,
@@ -125,6 +185,8 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     refresh,
     addMovieOptimistic,
     removeMovieOptimistic,
+    updateMovieCategoryOptimistic,
+    updateMovieReviewOptimistic,
   };
 
   return (

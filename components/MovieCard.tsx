@@ -1,4 +1,8 @@
+"use client";
+
 import Image from "next/image";
+
+export type WatchlistStatus = "wantToWatch" | "watched" | "rewatch" | null;
 
 export interface Movie {
   id?: string;
@@ -8,16 +12,22 @@ export interface Movie {
   description: string;
   genre?: string;
   posterUrl?: string | null;
+  status?: WatchlistStatus;
+  rating?: number;
+  review?: string;
 }
-
-export type WatchlistStatus = "wantToWatch" | "watched" | "rewatch" | null;
 
 interface MovieCardProps {
   movie: Movie;
   status?: WatchlistStatus; // null = not in the user's list yet
-  isAdding?: boolean; // true while a POST is in flight for this card
-  addError?: string | null; // error message for this card, if any
-  onAdd?: (movie: Movie) => void; // called when user clicks Add
+  isAdding?: boolean; // true while a POST is in flight
+  addError?: string | null;
+  onAdd?: (movie: Movie) => void;
+  /** Issue #28: Status change handler for watchlist cards */
+  onStatusChange?: (movie: Movie, newStatus: Exclude<WatchlistStatus, null>) => void;
+  /** Issue #28: Trigger to open the review modal */
+  onOpenReview?: (movie: Movie) => void;
+  isUpdatingStatus?: boolean;
 }
 
 function statusLabel(status: WatchlistStatus): string {
@@ -33,13 +43,16 @@ export default function MovieCard({
   isAdding = false,
   addError = null,
   onAdd,
+  onStatusChange,
+  onOpenReview,
+  isUpdatingStatus = false,
 }: MovieCardProps) {
-  const alreadyInList = status !== null;
+  const currentStatus = status ?? movie.status ?? null;
+  const alreadyInList = currentStatus !== null;
 
   return (
     <div className="bg-[#2c2c2c] border border-[#f5c518]/20 rounded-md p-5 flex flex-col justify-between hover:border-[#f5c518]/50 transition-colors shadow-md">
       <div>
-        {/* *** Full Poster *** */}
         {movie.posterUrl && (
           <Image
             src={movie.posterUrl}
@@ -50,19 +63,8 @@ export default function MovieCard({
             className="w-full h-48 object-cover rounded-md mb-3"
             style={{ width: "100%", height: "auto" }}
           />
-        )}{" "}
-        {/* --- Cut Poster --- */}
-        {/* {movie.posterUrl && (
-          <div className="relative mb-3 h-48 w-full overflow-hidden rounded-md">
-            <Image
-              src={movie.posterUrl}
-              alt={`${movie.title} poster`}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 33vw"
-            />
-          </div>
-        )} */}
+        )}
+
         <div className="flex justify-between items-start gap-2 mb-2">
           <h3 className="font-serif text-lg font-bold text-[#f5f5f4] leading-tight">
             {movie.title}
@@ -73,17 +75,73 @@ export default function MovieCard({
             </span>
           )}
         </div>
+
         {movie.genre && (
           <p className="text-xs text-[#afb6c2] mb-3 uppercase tracking-wider font-semibold">
             {movie.genre}
           </p>
         )}
+
         <p className="text-[#afb6c2] text-sm line-clamp-3">
           {movie.description}
         </p>
+
+        {/* Existing rating & review snippet if present */}
+        {(movie.rating || movie.review) && (
+          <div className="mt-3 pt-3 border-t border-[#f5c518]/10 text-xs text-[#afb6c2]">
+            {movie.rating && (
+              <span className="text-[#f5c518] font-bold block mb-1">
+                {"★".repeat(movie.rating)}
+                {"☆".repeat(5 - movie.rating)} ({movie.rating}/5)
+              </span>
+            )}
+            {movie.review && (
+              <p className="italic text-[#f5f5f4]/80 line-clamp-2">
+                &ldquo;{movie.review}&rdquo;
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Add / status controls */}
+      {/* Watchlist Controls (When card is rendered on the Watchlist page) */}
+      {onStatusChange && currentStatus && (
+        <div className="mt-4 pt-3 border-t border-[#f5c518]/10 flex items-center justify-between gap-2">
+          <div className="flex-1">
+            <label htmlFor={`status-${movie._id || movie.id}`} className="sr-only">
+              Change Status
+            </label>
+            <select
+              id={`status-${movie._id || movie.id}`}
+              value={currentStatus}
+              disabled={isUpdatingStatus}
+              onChange={(e) =>
+                onStatusChange(
+                  movie,
+                  e.target.value as Exclude<WatchlistStatus, null>
+                )
+              }
+              className="w-full bg-[#1a1a1a] border border-[#f5c518]/30 rounded px-2.5 py-1.5 text-xs font-semibold text-[#f5c518] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#f5c518] disabled:opacity-50"
+            >
+              <option value="wantToWatch">Want to Watch</option>
+              <option value="watched">Watched</option>
+              <option value="rewatch">Want to Rewatch</option>
+            </select>
+          </div>
+
+          {onOpenReview && (
+            <button
+              type="button"
+              onClick={() => onOpenReview(movie)}
+              className="px-2.5 py-1.5 bg-[#1a1a1a] border border-[#f5c518]/40 hover:bg-[#f5c518]/20 text-[#f5c518] rounded text-xs font-semibold transition-colors cursor-pointer"
+            >
+              {movie.rating ? "Edit Review" : "Review"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Add / status controls (When card is rendered on the Search page) */}
       {onAdd !== undefined && (
         <div className="mt-4 space-y-2">
           {alreadyInList ? (
@@ -91,9 +149,9 @@ export default function MovieCard({
               type="button"
               disabled
               className="w-full rounded-md border border-[#f5c518]/30 bg-[#1a1a1a] px-3 py-2 text-sm font-semibold text-[#f5c518] opacity-80 cursor-default"
-              aria-label={`${movie.title} is in your list: ${statusLabel(status)}`}
+              aria-label={`${movie.title} is in your list: ${statusLabel(currentStatus)}`}
             >
-              {statusLabel(status)}
+              {statusLabel(currentStatus)}
             </button>
           ) : (
             <button
