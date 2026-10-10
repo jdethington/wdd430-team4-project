@@ -1,11 +1,12 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import type { Metadata } from "next";
+import "./globals.css";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: 'WatchList | Organize & Track Your Movie Journey',
-  description: 'A private space for movie fans to discover, save, and review films.',
+  title: "WatchList | Organize & Track Your Movie Journey",
+  description:
+    "A private space for movie fans to discover, save, and review films.",
 };
 
 export default function RootLayout({

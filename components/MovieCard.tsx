@@ -18,7 +18,7 @@ interface MovieCardProps {
   isAdding?: boolean;
   addError?: string | null;
   onAdd?: (movie: Movie) => void;
-  onDelete?: (movie: Movie) => void;  // ← your addition
+  onDelete?: (movie: Movie) => void; // ← your addition
 }
 
 function statusLabel(status: WatchlistStatus): string {
@@ -34,7 +34,7 @@ export default function MovieCard({
   isAdding = false,
   addError = null,
   onAdd,
-  onDelete,  
+  onDelete,
 }: MovieCardProps) {
   const alreadyInList = status !== null;
 

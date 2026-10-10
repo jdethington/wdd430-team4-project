@@ -8,12 +8,12 @@ A personal movie collection manager for film fans. Search movies, organize them 
 
 ## Team
 
-| Name | GitHub |
-|------|--------|
-| Jacob Ethington | [jdethington](https://github.com/jdethington) |
+| Name                       | GitHub                                                  |
+| -------------------------- | ------------------------------------------------------- |
+| Jacob Ethington            | [jdethington](https://github.com/jdethington)           |
 | Luthando Lwandile Ngombane | [LuthandoNgombane](https://github.com/LuthandoNgombane) |
-| Pamela Lynn Christison | [kimchristian50](https://github.com/kimchristian50) |
-| Peter Simon Bwire | [Elitefx755](https://github.com/Elitefx755) |
+| Pamela Lynn Christison     | [kimchristian50](https://github.com/kimchristian50)     |
+| Peter Simon Bwire          | [elitefx75](https://github.com/elitefx75)               |
 
 ---
 
@@ -30,7 +30,7 @@ A personal movie collection manager for film fans. Search movies, organize them 
 
 ## Tech Stack
 
-- **Framework:** Next.js 15 (App Router)
+- **Framework:** Next.js ^16.3.4 (App Router)
 - **Language:** TypeScript
 - **Database:** MongoDB Atlas
 - **Authentication:** Auth.js v5 (Credentials provider)
@@ -43,6 +43,7 @@ A personal movie collection manager for film fans. Search movies, organize them 
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - A MongoDB Atlas account
 - A Vercel account (for deployment)
@@ -67,6 +68,7 @@ SESSION_SECRET=your_session_secret
 ```
 
 Generate `AUTH_SECRET` with:
+
 ```bash
 npx auth secret
 ```
@@ -83,12 +85,12 @@ Visit [http://localhost:3000](http://localhost:3000)
 
 ## API Routes
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/movies/search?q={query}` | No | Search movie catalog by title |
-| GET | `/api/watchlist` | Required | Get user's watchlist by category |
-| POST | `/api/watchlist` | Required | Add movie to Want to Watch |
-| DELETE | `/api/watchlist/{movieId}` | Required | Remove movie from watchlist |
+| Method | Endpoint                       | Auth     | Description                      |
+| ------ | ------------------------------ | -------- | -------------------------------- |
+| GET    | `/api/movies/search?q={query}` | No       | Search movie catalog by title    |
+| GET    | `/api/watchlist`               | Required | Get user's watchlist by category |
+| POST   | `/api/watchlist`               | Required | Add movie to Want to Watch       |
+| DELETE | `/api/watchlist/{movieId}`     | Required | Remove movie from watchlist      |
 
 ---
 
@@ -96,12 +98,12 @@ Visit [http://localhost:3000](http://localhost:3000)
 
 To test the app without creating an account:
 
-| Field | Value |
-|-------|-------|
-| Email | demo@example.com |
-| Password | password123 |
+| Field    | Value            |
+| -------- | ---------------- |
+| Email    | demo@example.com |
+| Password | password123      |
 
-*(Or create your own account via the Sign Up page)*
+_(Or create your own account via the Sign Up page)_
 
 ---
 
@@ -125,7 +127,6 @@ lib/
 ├── session.ts # Session helpers
 └── watchlist.ts # Watchlist data access
 
-
 ---
 
 ## Known Issues / Future Opportunities
@@ -138,9 +139,11 @@ lib/
 ## Development
 
 ### Branch Naming
+
 Feature branches named by feature: `feature/feature-name`
 
 ### Code Quality
+
 ```bash
 npm run lint    # ESLint
 npm run build   # TypeScript check + production build
@@ -148,4 +151,4 @@ npm run build   # TypeScript check + production build
 
 ---
 
-*Built with Next.js · Deployed on Vercel*
+_Built with Next.js · Deployed on Vercel_
