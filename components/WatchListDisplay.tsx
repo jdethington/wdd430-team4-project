@@ -20,7 +20,7 @@ export default function WatchlistDisplay() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   // Helper to resolve MongoDB _id or id
-  const getMovieId = (movie: Movie) => movie._id || movie.id || "";
+  const getMovieId = (movie: Movie) => movie.id || movie._id || "";
 
   // Handle status/category change
   const handleStatusChange = async (
