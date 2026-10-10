@@ -50,9 +50,19 @@ interface WatchlistContextValue {
 const WatchlistContext = createContext<WatchlistContextValue | null>(null);
 
 function movieKey(m: { id?: string; _id?: string }): string | null {
-  if (m.id && m.id.length > 0) return m.id;
+  if (m.id && m.id.length > 0) return String(m.id);
   if (m._id) return String(m._id);
   return null;
+}
+
+/** Matches against provider id, mongodb _id, or computed movieKey */
+function matchesId(m: Movie, targetId: string): boolean {
+  if (!targetId) return false;
+  const key = movieKey(m);
+  const rawId = m.id ? String(m.id) : null;
+  const rawMongoId = m._id ? String(m._id) : null;
+
+  return key === targetId || rawId === targetId || rawMongoId === targetId;
 }
 
 export function WatchlistProvider({ children }: { children: ReactNode }) {
@@ -114,7 +124,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
 
     setWatchlist((prev) => {
       const all = [...prev.wantToWatch, ...prev.watched, ...prev.rewatch];
-      if (all.some((m) => movieKey(m) === id)) return prev;
+      if (all.some((m) => matchesId(m, id))) return prev;
 
       return {
         ...prev,
@@ -125,28 +135,28 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
 
   const removeMovieOptimistic = useCallback((movieId: string) => {
     setWatchlist((prev) => ({
-      wantToWatch: prev.wantToWatch.filter((m) => movieKey(m) !== movieId),
-      watched: prev.watched.filter((m) => movieKey(m) !== movieId),
-      rewatch: prev.rewatch.filter((m) => movieKey(m) !== movieId),
+      wantToWatch: prev.wantToWatch.filter((m) => !matchesId(m, movieId)),
+      watched: prev.watched.filter((m) => !matchesId(m, movieId)),
+      rewatch: prev.rewatch.filter((m) => !matchesId(m, movieId)),
     }));
   }, []);
 
   const updateMovieCategoryOptimistic = useCallback(
     (movieId: string, newCategory: WatchlistCategory) => {
       setWatchlist((prev) => {
-        // Locate target item from whichever section it is in
+        // Locate target item from whichever section it is currently in
         const all = [...prev.wantToWatch, ...prev.watched, ...prev.rewatch];
-        const targetMovie = all.find((m) => movieKey(m) === movieId);
+        const targetMovie = all.find((m) => matchesId(m, movieId));
         if (!targetMovie) return prev;
 
         // Remove from all existing sections
         const filtered: WatchlistData = {
-          wantToWatch: prev.wantToWatch.filter((m) => movieKey(m) !== movieId),
-          watched: prev.watched.filter((m) => movieKey(m) !== movieId),
-          rewatch: prev.rewatch.filter((m) => movieKey(m) !== movieId),
+          wantToWatch: prev.wantToWatch.filter((m) => !matchesId(m, movieId)),
+          watched: prev.watched.filter((m) => !matchesId(m, movieId)),
+          rewatch: prev.rewatch.filter((m) => !matchesId(m, movieId)),
         };
 
-        // Add to destination section with updated status
+        // Add to target section with the updated status property
         return {
           ...filtered,
           [newCategory]: [
@@ -164,7 +174,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
       setWatchlist((prev) => {
         const updateList = (list: Movie[]) =>
           list.map((m) =>
-            movieKey(m) === movieId ? { ...m, ...reviewData } : m
+            matchesId(m, movieId) ? { ...m, ...reviewData } : m
           );
 
         return {
