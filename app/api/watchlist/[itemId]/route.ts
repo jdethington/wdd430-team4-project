@@ -11,14 +11,14 @@ const VALID_CATEGORIES: WatchlistCategory[] = [
 export async function PATCH(
   request: Request,
   // Match folder name: [id] -> id (or rename folder to [itemId] -> itemId)
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ itemId: string }> }
 ) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = await params;
+  const { itemId } = await params;
   const body = await request.json();
 
   // Validate category if provided in the payload
@@ -37,7 +37,7 @@ export async function PATCH(
     );
   }
 
-  const updatedDoc = await updateWatchlistItem(session.user.id, id, {
+  const updatedDoc = await updateWatchlistItem(session.user.id, itemId, {
     status: body.status,
     rating: body.rating,
     review: body.review,
