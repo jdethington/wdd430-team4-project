@@ -23,6 +23,18 @@ const categories: { id: WatchlistCategory; label: string }[] = [
     { id: 'want-to-rewatch', label: 'Want to Rewatch' },
 ];
 
+const categoryActions: Record<WatchlistCategory, { category: WatchlistCategory; label: string }[]> = {
+    'want-to-watch': [{ category: 'watched', label: 'Mark as watched' }],
+    watched: [
+        { category: 'want-to-rewatch', label: 'Move to Want to Rewatch' },
+        { category: 'want-to-watch', label: 'Move to Want to Watch' },
+    ],
+    'want-to-rewatch': [
+        { category: 'watched', label: 'Mark as watched' },
+        { category: 'want-to-watch', label: 'Move to Want to Watch' },
+    ],
+};
+
 function createDraft(entry: WatchlistEntryData): EntryDraft {
     return {
         category: entry.category,
@@ -133,11 +145,11 @@ export default function WatchlistManager({ initialEntries, initialLoadError = fa
         }));
     }
 
-    async function saveEntry(event: FormEvent<HTMLFormElement>, entry: WatchlistEntryData) {
-        event.preventDefault();
-        const draft = drafts[entry.id];
-        if (!draft) return;
-
+    async function updateEntry(
+        entry: WatchlistEntryData,
+        updates: Partial<Pick<WatchlistEntryData, 'category' | 'rating' | 'review'>>,
+        fallback: string,
+    ) {
         setBusyId(entry.id);
         setError('');
 
@@ -145,24 +157,32 @@ export default function WatchlistManager({ initialEntries, initialLoadError = fa
             const response = await fetch(`/api/watchlist/${entry.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    category: draft.category,
-                    rating: draft.rating ? Number(draft.rating) : null,
-                    review: draft.review || null,
-                }),
+                body: JSON.stringify(updates),
             });
             if (!response.ok) {
-                throw new Error(await getErrorMessage(response, 'Unable to save this movie.'));
+                throw new Error(await getErrorMessage(response, fallback));
             }
 
             const data = await response.json() as { entry: WatchlistEntryData };
             setEntries((current) => current.map((item) => item.id === entry.id ? data.entry : item));
             setDrafts((current) => ({ ...current, [entry.id]: createDraft(data.entry) }));
         } catch (saveError) {
-            setError(saveError instanceof Error ? saveError.message : 'Unable to save this movie.');
+            setError(saveError instanceof Error ? saveError.message : fallback);
         } finally {
             setBusyId(null);
         }
+    }
+
+    async function saveEntry(event: FormEvent<HTMLFormElement>, entry: WatchlistEntryData) {
+        event.preventDefault();
+        const draft = drafts[entry.id];
+        if (!draft) return;
+
+        await updateEntry(entry, {
+            category: draft.category,
+            rating: draft.rating ? Number(draft.rating) : null,
+            review: draft.review || null,
+        }, 'Unable to save this movie.');
     }
 
     async function removeEntry(entry: WatchlistEntryData) {
@@ -288,6 +308,19 @@ export default function WatchlistManager({ initialEntries, initialLoadError = fa
                                             <p className="mt-1 text-xs text-[#afb6c2]">{entry.movie.year || 'Year unknown'}</p>
                                         </div>
                                         <button type="button" onClick={() => removeEntry(entry)} disabled={busyId === entry.id} aria-label={`Remove ${entry.movie.title}`} className="text-xs text-[#afb6c2] underline underline-offset-4 hover:text-red-300 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#f5c518]">Remove</button>
+                                    </div>
+                                    <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label={`Update ${entry.movie.title} category`}>
+                                        {categoryActions[entry.category].map((action) => (
+                                            <button
+                                                key={action.category}
+                                                type="button"
+                                                onClick={() => updateEntry(entry, { category: action.category }, 'Unable to move this movie.')}
+                                                disabled={busyId === entry.id}
+                                                className="border border-[#555] px-3 py-2 text-xs text-[#afb6c2] transition-colors hover:border-[#f5c518] hover:text-[#f5c518] disabled:cursor-wait disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#f5c518]"
+                                            >
+                                                {busyId === entry.id ? 'Updating...' : action.label}
+                                            </button>
+                                        ))}
                                     </div>
                                     <form onSubmit={(event) => saveEntry(event, entry)} className="space-y-4">
                                         <div className="grid gap-4 sm:grid-cols-2">
