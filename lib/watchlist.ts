@@ -2,18 +2,87 @@ import { getDb } from "@/lib/db";
 
 export type WatchlistCategory = "wantToWatch" | "watched" | "rewatch";
 
+export interface MovieReview {
+  rating?: number;
+  review?: string;
+  updatedAt?: Date;
+}
+
 export interface WatchlistDocument {
   userId: string;
   wantToWatch: string[];
   watched: string[];
   rewatch: string[];
+  reviews?: Record<string, MovieReview>;
 }
+
+export interface UpdateWatchlistParams {
+  status?: WatchlistCategory;
+  rating?: number;
+  review?: string;
+}
+
 
 const EMPTY_LISTS = {
   wantToWatch: [] as string[],
   watched: [] as string[],
   rewatch: [] as string[],
 };
+
+/**
+ * Updates an item's status category and/or review details in the user's watchlist document.
+ */
+export async function updateWatchlistItem(
+  userId: string,
+  movieId: string,
+  updates: UpdateWatchlistParams
+): Promise<WatchlistDocument | null> {
+  const watchlist = await getWatchlistCollection();
+
+  // 1. If status is provided, remove movieId from all three lists and add to target category
+  if (updates.status) {
+    await watchlist.updateOne(
+      { userId },
+      {
+        $pull: {
+          wantToWatch: movieId,
+          watched: movieId,
+          rewatch: movieId,
+        },
+      }
+    );
+
+    await watchlist.updateOne(
+      { userId },
+      {
+        $addToSet: { [updates.status]: movieId },
+      }
+    );
+  }
+
+  // 2. If review notes or rating are provided, store/merge into the reviews map
+  if (updates.rating !== undefined || updates.review !== undefined) {
+    const reviewData: Record<string, unknown> = {
+      updatedAt: new Date(),
+    };
+    if (updates.rating !== undefined) reviewData.rating = updates.rating;
+    if (updates.review !== undefined) reviewData.review = updates.review;
+
+    return watchlist.findOneAndUpdate(
+      { userId },
+      {
+        $set: {
+          [`reviews.${movieId}`]: reviewData,
+        },
+      },
+      { returnDocument: "after" }
+    );
+  }
+
+  // Return the updated document
+  return watchlist.findOne({ userId });
+}
+
 
 const getWatchlistCollection = async () => {
   const db = await getDb();

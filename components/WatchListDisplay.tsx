@@ -1,10 +1,85 @@
 "use client";
 
-import MovieCard from "@/components/MovieCard";
-import { useWatchlist } from "@/components/WatchlistContext";
+import { useState } from "react";
+import MovieCard, { type Movie, type WatchlistStatus } from "@/components/MovieCard";
+import ReviewModal from "@/components/ReviewModal";
+import { useWatchlist, type WatchlistCategory } from "@/components/WatchlistContext";
 
 export default function WatchlistDisplay() {
-  const { watchlist, loading, error, refresh } = useWatchlist();
+  const {
+    watchlist,
+    loading,
+    error,
+    refresh,
+    updateMovieCategoryOptimistic,
+    updateMovieReviewOptimistic,
+  } = useWatchlist();
+
+  // State to control Review Modal
+  const [activeReviewMovie, setActiveReviewMovie] = useState<Movie | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  // Helper to resolve MongoDB _id or id
+  const getMovieId = (movie: Movie) => movie.id || movie._id || "";
+
+  // Handle status/category change
+  const handleStatusChange = async (
+    movie: Movie,
+    newStatus: Exclude<WatchlistStatus, null>
+  ) => {
+    const movieId = getMovieId(movie);
+    if (!movieId) return;
+
+    // 1. Instantly move across sections in the UI
+    updateMovieCategoryOptimistic(movieId, newStatus as WatchlistCategory);
+
+    // 2. Persist to API
+    setUpdatingId(movieId);
+    try {
+      const res = await fetch(`/api/watchlist/${movieId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        // If PATCH fails, refresh to revert back to server truth
+        await refresh();
+      } else if (newStatus === "watched") {
+        // Optional UX polish: prompt review when moving to Watched
+        setActiveReviewMovie({ ...movie, status: newStatus });
+      }
+    } catch {
+      await refresh();
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // Handle review save from modal
+  const handleSaveReview = async (data: { rating: number; review: string }) => {
+    if (!activeReviewMovie) return;
+    const movieId = getMovieId(activeReviewMovie);
+    if (!movieId) return;
+
+    // 1. Optimistically update local review & rating
+    updateMovieReviewOptimistic(movieId, data);
+
+    // 2. Persist to API
+    try {
+      const res = await fetch(`/api/watchlist/${movieId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        await refresh();
+      }
+    } catch {
+      await refresh();
+    }
+  };
 
   if (loading) {
     return (
@@ -66,6 +141,7 @@ export default function WatchlistDisplay() {
         </div>
       )}
 
+      {/* Want to Watch */}
       {watchlist.wantToWatch.length > 0 && (
         <section>
           <div className="flex items-center gap-3 mb-6">
@@ -76,12 +152,20 @@ export default function WatchlistDisplay() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {watchlist.wantToWatch.map((movie) => (
-              <MovieCard key={movie._id} movie={movie} />
+              <MovieCard
+                key={getMovieId(movie)}
+                movie={movie}
+                status="wantToWatch"
+                isUpdatingStatus={updatingId === getMovieId(movie)}
+                onStatusChange={handleStatusChange}
+                onOpenReview={(m) => setActiveReviewMovie(m)}
+              />
             ))}
           </div>
         </section>
       )}
 
+      {/* Watched */}
       {watchlist.watched.length > 0 && (
         <section>
           <div className="flex items-center gap-3 mb-6">
@@ -92,12 +176,20 @@ export default function WatchlistDisplay() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {watchlist.watched.map((movie) => (
-              <MovieCard key={movie._id} movie={movie} />
+              <MovieCard
+                key={getMovieId(movie)}
+                movie={movie}
+                status="watched"
+                isUpdatingStatus={updatingId === getMovieId(movie)}
+                onStatusChange={handleStatusChange}
+                onOpenReview={(m) => setActiveReviewMovie(m)}
+              />
             ))}
           </div>
         </section>
       )}
 
+      {/* Want to Rewatch */}
       {watchlist.rewatch.length > 0 && (
         <section>
           <div className="flex items-center gap-3 mb-6">
@@ -110,11 +202,28 @@ export default function WatchlistDisplay() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {watchlist.rewatch.map((movie) => (
-              <MovieCard key={movie._id} movie={movie} />
+              <MovieCard
+                key={getMovieId(movie)}
+                movie={movie}
+                status="rewatch"
+                isUpdatingStatus={updatingId === getMovieId(movie)}
+                onStatusChange={handleStatusChange}
+                onOpenReview={(m) => setActiveReviewMovie(m)}
+              />
             ))}
           </div>
         </section>
       )}
+
+      {/* Review & Rating Modal */}
+      <ReviewModal
+        isOpen={Boolean(activeReviewMovie)}
+        movieTitle={activeReviewMovie?.title ?? ""}
+        initialRating={activeReviewMovie?.rating ?? 5}
+        initialReview={activeReviewMovie?.review ?? ""}
+        onClose={() => setActiveReviewMovie(null)}
+        onSubmit={handleSaveReview}
+      />
     </div>
   );
 }

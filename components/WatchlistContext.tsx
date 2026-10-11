@@ -19,6 +19,11 @@ export interface WatchlistData {
   rewatch: Movie[];
 }
 
+export interface ReviewData {
+  rating?: number;
+  review?: string;
+}
+
 interface WatchlistContextValue {
   watchlist: WatchlistData;
   loading: boolean;
@@ -28,16 +33,36 @@ interface WatchlistContextValue {
   refresh: () => Promise<void>;
   /** After a successful Add: put movie in wantToWatch locally */
   addMovieOptimistic: (movie: Movie) => void;
-  /** Undo optimistic add on failure */
+  /** Undo optimistic add on failure or deletion */
   removeMovieOptimistic: (movieId: string) => void;
+  /** Smoothly transfer a movie between categories locally */
+  updateMovieCategoryOptimistic: (
+    movieId: string,
+    newCategory: WatchlistCategory
+  ) => void;
+  /** Update movie rating and review notes locally */
+  updateMovieReviewOptimistic: (
+    movieId: string,
+    reviewData: ReviewData
+  ) => void;
 }
 
 const WatchlistContext = createContext<WatchlistContextValue | null>(null);
 
 function movieKey(m: { id?: string; _id?: string }): string | null {
-  if (m.id && m.id.length > 0) return m.id;
+  if (m.id && m.id.length > 0) return String(m.id);
   if (m._id) return String(m._id);
   return null;
+}
+
+/** Matches against provider id, mongodb _id, or computed movieKey */
+function matchesId(m: Movie, targetId: string): boolean {
+  if (!targetId) return false;
+  const key = movieKey(m);
+  const rawId = m.id ? String(m.id) : null;
+  const rawMongoId = m._id ? String(m._id) : null;
+
+  return key === targetId || rawId === targetId || rawMongoId === targetId;
 }
 
 export function WatchlistProvider({ children }: { children: ReactNode }) {
@@ -98,9 +123,8 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     if (!id) return;
 
     setWatchlist((prev) => {
-      // already somewhere?
       const all = [...prev.wantToWatch, ...prev.watched, ...prev.rewatch];
-      if (all.some((m) => movieKey(m) === id)) return prev;
+      if (all.some((m) => matchesId(m, id))) return prev;
 
       return {
         ...prev,
@@ -111,11 +135,57 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
 
   const removeMovieOptimistic = useCallback((movieId: string) => {
     setWatchlist((prev) => ({
-      wantToWatch: prev.wantToWatch.filter((m) => movieKey(m) !== movieId),
-      watched: prev.watched.filter((m) => movieKey(m) !== movieId),
-      rewatch: prev.rewatch.filter((m) => movieKey(m) !== movieId),
+      wantToWatch: prev.wantToWatch.filter((m) => !matchesId(m, movieId)),
+      watched: prev.watched.filter((m) => !matchesId(m, movieId)),
+      rewatch: prev.rewatch.filter((m) => !matchesId(m, movieId)),
     }));
   }, []);
+
+  const updateMovieCategoryOptimistic = useCallback(
+    (movieId: string, newCategory: WatchlistCategory) => {
+      setWatchlist((prev) => {
+        // Locate target item from whichever section it is currently in
+        const all = [...prev.wantToWatch, ...prev.watched, ...prev.rewatch];
+        const targetMovie = all.find((m) => matchesId(m, movieId));
+        if (!targetMovie) return prev;
+
+        // Remove from all existing sections
+        const filtered: WatchlistData = {
+          wantToWatch: prev.wantToWatch.filter((m) => !matchesId(m, movieId)),
+          watched: prev.watched.filter((m) => !matchesId(m, movieId)),
+          rewatch: prev.rewatch.filter((m) => !matchesId(m, movieId)),
+        };
+
+        // Add to target section with the updated status property
+        return {
+          ...filtered,
+          [newCategory]: [
+            ...filtered[newCategory],
+            { ...targetMovie, status: newCategory },
+          ],
+        };
+      });
+    },
+    []
+  );
+
+  const updateMovieReviewOptimistic = useCallback(
+    (movieId: string, reviewData: ReviewData) => {
+      setWatchlist((prev) => {
+        const updateList = (list: Movie[]) =>
+          list.map((m) =>
+            matchesId(m, movieId) ? { ...m, ...reviewData } : m
+          );
+
+        return {
+          wantToWatch: updateList(prev.wantToWatch),
+          watched: updateList(prev.watched),
+          rewatch: updateList(prev.rewatch),
+        };
+      });
+    },
+    []
+  );
 
   const value: WatchlistContextValue = {
     watchlist,
@@ -125,6 +195,8 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
     refresh,
     addMovieOptimistic,
     removeMovieOptimistic,
+    updateMovieCategoryOptimistic,
+    updateMovieReviewOptimistic,
   };
 
   return (
