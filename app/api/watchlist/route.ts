@@ -94,21 +94,33 @@ export async function GET(request: Request) {
       ]),
     );
 
-    const sanitizeMovie = (movie: MovieDocument) => ({
-      _id: movie._id.toString(),
-      id: String((movie as { id?: string }).id ?? movie._id.toString()), // provider id used in wantToWatch / watched / rewatch arrays
-      title: movie.title ?? "Untitled",
-      releaseYear: movie.releaseYear ?? null,
-      description:
-        movie.overview ?? movie.description ?? "No description available.",
-      genre: Array.isArray(movie.genres)
-        ? movie.genres
-            .map((g: { name?: string }) => g.name)
-            .filter(Boolean)
-            .join(", ")
-        : (movie.genre ?? ""),
-      posterUrl: movie.imageSet?.verticalPoster?.w240 ?? null,
-    });
+    // Pull reviews from the watchlist document
+    const reviews: Record<string, { rating?: number; review?: string }> =
+      watchlistDoc.reviews ?? {};
+
+    const sanitizeMovie = (movie: MovieDocument) => {
+      const id = String((movie as { id?: string }).id ?? movie._id.toString());
+      const reviewData = reviews[id] ?? {};
+
+      return {
+        _id: movie._id.toString(),
+        id, // provider id used in wantToWatch / watched / rewatch arrays
+        title: movie.title ?? "Untitled",
+        releaseYear: movie.releaseYear ?? null,
+        description:
+          movie.overview ?? movie.description ?? "No description available.",
+        genre: Array.isArray(movie.genres)
+          ? movie.genres
+              .map((g: { name?: string }) => g.name)
+              .filter(Boolean)
+              .join(", ")
+          : (movie.genre ?? ""),
+        posterUrl: movie.imageSet?.verticalPoster?.w240 ?? null,
+        // Include rating & review so they survive page reloads
+        rating: reviewData.rating,
+        review: reviewData.review,
+      };
+    };
 
     const getMovies = (ids: string[]) =>
       ids

@@ -11,11 +11,22 @@ interface ReviewModalProps {
   onSubmit: (data: { rating: number; review: string }) => Promise<void>;
 }
 
-export default function ReviewModal({
+export default function ReviewModal({ isOpen, ...props }: ReviewModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <ReviewModalContent
+      key={`${props.movieTitle}|${props.initialRating ?? 5}|${props.initialReview ?? ""}`}
+      isOpen={isOpen}
+      {...props}
+    />
+  );
+}
+
+function ReviewModalContent({
   movieTitle,
   initialRating = 5,
   initialReview = "",
-  isOpen,
   onClose,
   onSubmit,
 }: ReviewModalProps) {
@@ -23,8 +34,6 @@ export default function ReviewModal({
   const [review, setReview] = useState<string>(initialReview);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +75,8 @@ export default function ReviewModal({
         </div>
 
         <p className="text-sm text-[#afb6c2] mb-4">
-          Sharing your thoughts on: <strong className="text-[#f5f5f4]">{movieTitle}</strong>
+          Sharing your thoughts on:{" "}
+          <strong className="text-[#f5f5f4]">{movieTitle}</strong>
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
