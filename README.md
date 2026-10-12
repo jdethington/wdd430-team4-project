@@ -112,7 +112,7 @@ _(Or create your own account via the Sign Up page)_
 ---
 
 ## Project Structure
-
+```
 app/
 ├── api/
 │ ├── auth/ # Auth.js route handlers
@@ -139,7 +139,7 @@ lib/
 ├── db.ts # MongoDB connection
 ├── users.ts # User data access
 └── watchlist.ts # Watchlist data access
-
+```
 ---
 
 ## Known Issues / Future Opportunities
