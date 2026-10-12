@@ -24,7 +24,10 @@ interface MovieCardProps {
   addError?: string | null;
   onAdd?: (movie: Movie) => void;
   /** Issue #28: Status change handler for watchlist cards */
-  onStatusChange?: (movie: Movie, newStatus: Exclude<WatchlistStatus, null>) => void;
+  onStatusChange?: (
+    movie: Movie,
+    newStatus: Exclude<WatchlistStatus, null>,
+  ) => void;
   /** Issue #28: Trigger to open the review modal */
   onOpenReview?: (movie: Movie) => void;
   isUpdatingStatus?: boolean;
@@ -110,7 +113,10 @@ export default function MovieCard({
       {onStatusChange && currentStatus && (
         <div className="mt-4 pt-3 border-t border-[#f5c518]/10 flex items-center justify-between gap-2">
           <div className="flex-1">
-            <label htmlFor={`status-${movie.id || movie._id}`} className="sr-only">
+            <label
+              htmlFor={`status-${movie.id || movie._id}`}
+              className="sr-only"
+            >
               Change Status
             </label>
             <select
@@ -120,7 +126,7 @@ export default function MovieCard({
               onChange={(e) =>
                 onStatusChange(
                   movie,
-                  e.target.value as Exclude<WatchlistStatus, null>
+                  e.target.value as Exclude<WatchlistStatus, null>,
                 )
               }
               className="w-full bg-[#1a1a1a] border border-[#f5c518]/30 rounded px-2.5 py-1.5 text-xs font-semibold text-[#f5c518] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#f5c518] disabled:opacity-50"

@@ -22,7 +22,6 @@ export interface UpdateWatchlistParams {
   review?: string;
 }
 
-
 const EMPTY_LISTS = {
   wantToWatch: [] as string[],
   watched: [] as string[],
@@ -35,7 +34,7 @@ const EMPTY_LISTS = {
 export async function updateWatchlistItem(
   userId: string,
   movieId: string,
-  updates: UpdateWatchlistParams
+  updates: UpdateWatchlistParams,
 ): Promise<WatchlistDocument | null> {
   const watchlist = await getWatchlistCollection();
 
@@ -49,14 +48,14 @@ export async function updateWatchlistItem(
           watched: movieId,
           rewatch: movieId,
         },
-      }
+      },
     );
 
     await watchlist.updateOne(
       { userId },
       {
         $addToSet: { [updates.status]: movieId },
-      }
+      },
     );
   }
 
@@ -75,14 +74,13 @@ export async function updateWatchlistItem(
           [`reviews.${movieId}`]: reviewData,
         },
       },
-      { returnDocument: "after" }
+      { returnDocument: "after" },
     );
   }
 
   // Return the updated document
   return watchlist.findOne({ userId });
 }
-
 
 const getWatchlistCollection = async () => {
   const db = await getDb();
