@@ -38,12 +38,12 @@ interface WatchlistContextValue {
   /** Smoothly transfer a movie between categories locally */
   updateMovieCategoryOptimistic: (
     movieId: string,
-    newCategory: WatchlistCategory
+    newCategory: WatchlistCategory,
   ) => void;
   /** Update movie rating and review notes locally */
   updateMovieReviewOptimistic: (
     movieId: string,
-    reviewData: ReviewData
+    reviewData: ReviewData,
   ) => void;
 }
 
@@ -166,7 +166,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
         };
       });
     },
-    []
+    [],
   );
 
   const updateMovieReviewOptimistic = useCallback(
@@ -174,7 +174,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
       setWatchlist((prev) => {
         const updateList = (list: Movie[]) =>
           list.map((m) =>
-            matchesId(m, movieId) ? { ...m, ...reviewData } : m
+            matchesId(m, movieId) ? { ...m, ...reviewData } : m,
           );
 
         return {
@@ -184,7 +184,7 @@ export function WatchlistProvider({ children }: { children: ReactNode }) {
         };
       });
     },
-    []
+    [],
   );
 
   const value: WatchlistContextValue = {

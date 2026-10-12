@@ -23,9 +23,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "George Lucas"
-    ],
+    "directors": ["George Lucas"],
     "cast": [
       "Mark Hamill",
       "Harrison Ford",
@@ -78,9 +76,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "Richard Marquand"
-    ],
+    "directors": ["Richard Marquand"],
     "cast": [
       "Mark Hamill",
       "Harrison Ford",
@@ -133,9 +129,7 @@
         "name": "Family"
       }
     ],
-    "directors": [
-      "Jon Favreau"
-    ],
+    "directors": ["Jon Favreau"],
     "cast": [
       "Pedro Pascal",
       "Jeremy Allen White",
@@ -188,9 +182,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "George Lucas"
-    ],
+    "directors": ["George Lucas"],
     "cast": [
       "Hayden Christensen",
       "Ewan McGregor",
@@ -243,9 +235,7 @@
         "name": "Science Fiction"
       }
     ],
-    "directors": [
-      "Ron Howard"
-    ],
+    "directors": ["Ron Howard"],
     "cast": [
       "Alden Ehrenreich",
       "Joonas Suotamo",
@@ -298,9 +288,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "J.J. Abrams"
-    ],
+    "directors": ["J.J. Abrams"],
     "cast": [
       "Carrie Fisher",
       "Mark Hamill",
@@ -353,9 +341,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "Rian Johnson"
-    ],
+    "directors": ["Rian Johnson"],
     "cast": [
       "Mark Hamill",
       "Carrie Fisher",
@@ -408,9 +394,7 @@
         "name": "Science Fiction"
       }
     ],
-    "directors": [
-      "Gareth Edwards"
-    ],
+    "directors": ["Gareth Edwards"],
     "cast": [
       "Felicity Jones",
       "Diego Luna",
@@ -463,9 +447,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "George Lucas"
-    ],
+    "directors": ["George Lucas"],
     "cast": [
       "Hayden Christensen",
       "Ewan McGregor",
@@ -518,9 +500,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "George Lucas"
-    ],
+    "directors": ["George Lucas"],
     "cast": [
       "Liam Neeson",
       "Ewan McGregor",
@@ -573,9 +553,7 @@
         "name": "Science Fiction"
       }
     ],
-    "directors": [
-      "J.J. Abrams"
-    ],
+    "directors": ["J.J. Abrams"],
     "cast": [
       "Daisy Ridley",
       "John Boyega",
@@ -628,9 +606,7 @@
         "name": "Science Fiction"
       }
     ],
-    "directors": [
-      "Irvin Kershner"
-    ],
+    "directors": ["Irvin Kershner"],
     "cast": [
       "Mark Hamill",
       "Harrison Ford",
@@ -683,9 +659,7 @@
         "name": "Animation"
       }
     ],
-    "directors": [
-      "Ken Cunningham"
-    ],
+    "directors": ["Ken Cunningham"],
     "cast": [
       "Helen Sadler",
       "Trevor Devall",
@@ -738,9 +712,7 @@
         "name": "Animation"
       }
     ],
-    "directors": [
-      "Dave Filoni"
-    ],
+    "directors": ["Dave Filoni"],
     "cast": [
       "Matt Lanter",
       "Ashley Eckstein",
@@ -789,10 +761,7 @@
         "name": "History"
       }
     ],
-    "directors": [
-      "Jeremy Coon",
-      "Steve Kozak"
-    ],
+    "directors": ["Jeremy Coon", "Steve Kozak"],
     "cast": [
       "Seth Green",
       "Kevin Smith",
@@ -882,9 +851,7 @@
         "name": "Animation"
       }
     ],
-    "directors": [
-      "Ken Cunningham"
-    ],
+    "directors": ["Ken Cunningham"],
     "cast": [
       "Kelly Marie Tran",
       "Shelby Young",
@@ -933,9 +900,7 @@
         "name": "Animation"
       }
     ],
-    "directors": [
-      "Guy Vasilovich"
-    ],
+    "directors": ["Guy Vasilovich"],
     "cast": [
       "Anthony Daniels",
       "Kenneth Colley",
@@ -988,9 +953,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "David Yates"
-    ],
+    "directors": ["David Yates"],
     "cast": [
       "Daniel Radcliffe",
       "Rupert Grint",
@@ -1043,9 +1006,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "David Yates"
-    ],
+    "directors": ["David Yates"],
     "cast": [
       "Daniel Radcliffe",
       "Emma Watson",
@@ -1098,9 +1059,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "David Yates"
-    ],
+    "directors": ["David Yates"],
     "cast": [
       "Daniel Radcliffe",
       "Rupert Grint",
@@ -1153,9 +1112,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "Mike Newell"
-    ],
+    "directors": ["Mike Newell"],
     "cast": [
       "Daniel Radcliffe",
       "Rupert Grint",
@@ -1208,9 +1165,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "Alfonso Cuarón"
-    ],
+    "directors": ["Alfonso Cuarón"],
     "cast": [
       "Daniel Radcliffe",
       "Rupert Grint",
@@ -1263,9 +1218,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "Chris Columbus"
-    ],
+    "directors": ["Chris Columbus"],
     "cast": [
       "Daniel Radcliffe",
       "Rupert Grint",
@@ -1318,9 +1271,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "David Yates"
-    ],
+    "directors": ["David Yates"],
     "cast": [
       "Daniel Radcliffe",
       "Emma Watson",
@@ -1427,9 +1378,7 @@
         "name": "Fantasy"
       }
     ],
-    "directors": [
-      "Chris Columbus"
-    ],
+    "directors": ["Chris Columbus"],
     "cast": [
       "Daniel Radcliffe",
       "Rupert Grint",
@@ -1474,9 +1423,7 @@
         "name": "Documentary"
       }
     ],
-    "directors": [
-      "Eliot Rausch"
-    ],
+    "directors": ["Eliot Rausch"],
     "cast": [
       "Nick Frost",
       "Dominic McLaughlin",
@@ -1521,10 +1468,7 @@
         "name": "Documentary"
       }
     ],
-    "directors": [
-      "Jude Ho",
-      "Alex Harding"
-    ],
+    "directors": ["Jude Ho", "Alex Harding"],
     "cast": [
       "Imelda Staunton",
       "J.K. Rowling",

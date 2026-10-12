@@ -1,31 +1,34 @@
-import Button from '@/components/ui/Button';
+import Button from "@/components/ui/Button";
 
 export default function Home() {
   // Temporary preview movies for unauthenticated visitors
   const sampleMovies = [
     {
       id: 1,
-      title: 'The Fellowship of the Ring',
-      year: '2001',
-      category: 'Want to Watch',
+      title: "The Fellowship of the Ring",
+      year: "2001",
+      category: "Want to Watch",
       rating: null,
-      summary: 'A meek Hobbit from the Shire and eight companions set out on a journey to destroy the powerful One Ring and save Middle-earth from the Dark Lord Sauron.',
+      summary:
+        "A meek Hobbit from the Shire and eight companions set out on a journey to destroy the powerful One Ring and save Middle-earth from the Dark Lord Sauron.",
     },
     {
       id: 2,
-      title: 'Star Wars: Episode IV - A New Hope',
-      year: '1977',
-      category: 'Watched',
-      rating: '★ 5/5',
-      summary: 'A farmboy joins forces with various allies to save their galaxy from the evil Empire’s planet-destroying battle station, while also rescuing the princess leading the rebellion against them.',
+      title: "Star Wars: Episode IV - A New Hope",
+      year: "1977",
+      category: "Watched",
+      rating: "★ 5/5",
+      summary:
+        "A farmboy joins forces with various allies to save their galaxy from the evil Empire’s planet-destroying battle station, while also rescuing the princess leading the rebellion against them.",
     },
     {
       id: 3,
-      title: 'The Scarlet Pimpernel',
-      year: '1982',
-      category: 'Want to Rewatch',
-      rating: '★ 5/5',
-      summary: 'Paris, 1792: After France becomes a republic, aristocrats are guillotined. The English Sir Percy tries to save as many as he can as The Scarlet Pimpernel in disguises.',
+      title: "The Scarlet Pimpernel",
+      year: "1982",
+      category: "Want to Rewatch",
+      rating: "★ 5/5",
+      summary:
+        "Paris, 1792: After France becomes a republic, aristocrats are guillotined. The English Sir Percy tries to save as many as he can as The Scarlet Pimpernel in disguises.",
     },
   ];
 
@@ -48,14 +51,24 @@ export default function Home() {
         </h1>
 
         <p className="text-lg md:text-xl text-[#afb6c2] max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-          Replace scattered notes with a private, organized record of films you want to watch, films you have watched, and films you want to watch again.
+          Replace scattered notes with a private, organized record of films you
+          want to watch, films you have watched, and films you want to watch
+          again.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button href="/signup" variant="primary" className="w-full sm:w-auto text-base py-4 px-8">
+          <Button
+            href="/signup"
+            variant="primary"
+            className="w-full sm:w-auto text-base py-4 px-8"
+          >
             Create Free Account
           </Button>
-          <Button href="/login" variant="secondary" className="w-full sm:w-auto text-base py-4 px-8">
+          <Button
+            href="/login"
+            variant="secondary"
+            className="w-full sm:w-auto text-base py-4 px-8"
+          >
             Sign In to Dashboard
           </Button>
         </div>

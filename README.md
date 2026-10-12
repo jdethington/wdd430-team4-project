@@ -8,12 +8,12 @@ A personal movie collection manager for film fans. Search movies, organize them 
 
 ## Team
 
-| Name | GitHub |
-|------|--------|
-| Jacob Ethington | [jdethington](https://github.com/jdethington) |
+| Name                       | GitHub                                                  |
+| -------------------------- | ------------------------------------------------------- |
+| Jacob Ethington            | [jdethington](https://github.com/jdethington)           |
 | Luthando Lwandile Ngombane | [LuthandoNgombane](https://github.com/LuthandoNgombane) |
-| Pamela Lynn Christison | [kimchristian50](https://github.com/kimchristian50) |
-| Peter Simon Bwire | [elitefx75](https://github.com/elitefx75) |
+| Pamela Lynn Christison     | [kimchristian50](https://github.com/kimchristian50)     |
+| Peter Simon Bwire          | [elitefx75](https://github.com/elitefx75)               |
 
 ---
 
@@ -46,6 +46,7 @@ A personal movie collection manager for film fans. Search movies, organize them 
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+
 - A MongoDB Atlas account
 - A Vercel account (for deployment)
@@ -69,6 +70,7 @@ AUTH_SECRET=your_auth_secret
 ```
 
 Generate `AUTH_SECRET` with:
+
 ```bash
 npx auth secret
 ```
@@ -85,14 +87,14 @@ Visit [http://localhost:3000](http://localhost:3000)
 
 ## API Routes
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/movies/search?q={query}` | No | Search movie catalog by title |
-| GET | `/api/watchlist` | Required | Get user's watchlist organized by category |
-| GET | `/api/watchlist?category={cat}` | Required | Filter watchlist by category |
-| POST | `/api/watchlist` | Required | Add movie to Want to Watch |
-| PATCH | `/api/watchlist/{itemId}` | Required | Update movie category or add rating/review |
-| DELETE | `/api/watchlist/{itemId}` | Required | Remove movie from watchlist |
+| Method | Endpoint                        | Auth     | Description                                |
+| ------ | ------------------------------- | -------- | ------------------------------------------ |
+| GET    | `/api/movies/search?q={query}`  | No       | Search movie catalog by title              |
+| GET    | `/api/watchlist`                | Required | Get user's watchlist organized by category |
+| GET    | `/api/watchlist?category={cat}` | Required | Filter watchlist by category               |
+| POST   | `/api/watchlist`                | Required | Add movie to Want to Watch                 |
+| PATCH  | `/api/watchlist/{itemId}`       | Required | Update movie category or add rating/review |
+| DELETE | `/api/watchlist/{itemId}`       | Required | Remove movie from watchlist                |
 
 ---
 
@@ -100,17 +102,17 @@ Visit [http://localhost:3000](http://localhost:3000)
 
 To test the app without creating an account:
 
-| Field | Value |
-|-------|-------|
-| Email | demo@example.com |
-| Password | password123 |
+| Field    | Value            |
+| -------- | ---------------- |
+| Email    | demo@example.com |
+| Password | password123      |
 
-*(Or create your own account via the Sign Up page)*
+_(Or create your own account via the Sign Up page)_
 
 ---
 
 ## Project Structure
-
+```
 app/
 ├── api/
 │ ├── auth/ # Auth.js route handlers
@@ -137,8 +139,7 @@ lib/
 ├── db.ts # MongoDB connection
 ├── users.ts # User data access
 └── watchlist.ts # Watchlist data access
-
-
+```
 ---
 
 ## Known Issues / Future Opportunities
@@ -151,9 +152,11 @@ lib/
 ## Development
 
 ### Branch Naming
+
 Feature branches named by feature: `feature/feature-name`
 
 ### Code Quality
+
 ```bash
 npm run lint      # ESLint
 npm run format    # Prettier
@@ -162,4 +165,4 @@ npm run build     # TypeScript check + production build
 
 ---
 
-*Built with Next.js · Deployed on Vercel*
+_Built with Next.js · Deployed on Vercel_
