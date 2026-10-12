@@ -28,6 +28,7 @@ interface MovieCardProps {
   /** Issue #28: Trigger to open the review modal */
   onOpenReview?: (movie: Movie) => void;
   isUpdatingStatus?: boolean;
+  onDelete?: (movie: Movie) => void;
 }
 
 function statusLabel(status: WatchlistStatus): string {
@@ -46,6 +47,7 @@ export default function MovieCard({
   onStatusChange,
   onOpenReview,
   isUpdatingStatus = false,
+  onDelete,
 }: MovieCardProps) {
   const currentStatus = status ?? movie.status ?? null;
   const alreadyInList = currentStatus !== null;
@@ -171,6 +173,17 @@ export default function MovieCard({
             </p>
           )}
         </div>
+      )}
+      {/* Delete button — only shown on watchlist cards */}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={() => onDelete(movie)}
+          aria-label={`Remove ${movie.title} from watchlist`}
+          className="mt-4 w-full py-2 border border-red-500/30 text-red-400 text-xs font-semibold rounded-sm hover:bg-red-500/10 hover:border-red-500/60 transition-colors focus:outline-none focus:ring-2 focus:ring-[#f5c518]"
+        >
+          Remove from Watchlist
+        </button>
       )}
     </div>
   );
