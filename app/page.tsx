@@ -1,6 +1,9 @@
+import { auth } from "@/auth";
 import Button from "@/components/ui/Button";
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
   // Temporary preview movies for unauthenticated visitors
   const sampleMovies = [
     {
@@ -56,22 +59,35 @@ export default function Home() {
           again.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button
-            href="/signup"
-            variant="primary"
-            className="w-full sm:w-auto text-base py-4 px-8"
-          >
-            Create Free Account
-          </Button>
-          <Button
-            href="/login"
-            variant="secondary"
-            className="w-full sm:w-auto text-base py-4 px-8"
-          >
-            Sign In to Dashboard
-          </Button>
-        </div>
+        {/* Auth CTAs — only for guests */}
+        {!session?.user ? (
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button
+              href="/signup"
+              variant="primary"
+              className="w-full sm:w-auto text-base py-4 px-8"
+            >
+              Create Free Account
+            </Button>
+            <Button
+              href="/login"
+              variant="secondary"
+              className="w-full sm:w-auto text-base py-4 px-8"
+            >
+              Sign In to Dashboard
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button
+              href="/dashboard"
+              variant="primary"
+              className="w-full sm:w-auto text-base py-4 px-8"
+            >
+              Go to Dashboard
+            </Button>
+          </div>
+        )}
       </section>
 
       {/* Feature Preview Section */}
