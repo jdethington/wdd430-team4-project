@@ -36,10 +36,6 @@ export default async function Navbar() {
               >
                 Sign In
               </Link>
-
-              <Button href="/signup" variant="primary">
-                Get Started
-              </Button>
             </>
           )}
         </nav>
