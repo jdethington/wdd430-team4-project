@@ -80,7 +80,16 @@ export default function MovieSearch() {
       const res = await fetch("/api/watchlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ movieId: id }),
+        body: JSON.stringify({
+          movieId: id,
+          movie: {
+            title: movie.title,
+            releaseYear: movie.releaseYear ?? null,
+            description: movie.description ?? null,
+            genre: movie.genre ?? null,
+            posterUrl: movie.posterUrl ?? null,
+          },
+        }),
       });
 
       const data = await res.json().catch(() => ({}));

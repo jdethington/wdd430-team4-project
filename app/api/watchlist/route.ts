@@ -1,15 +1,26 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { MongoServerError, ObjectId } from "mongodb";
+import { MongoServerError } from "mongodb";
 
 import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
 import { addMovieToWantToWatch } from "@/lib/watchlist";
+import { ensureMovieInDb, upsertMovie } from "@/lib/movies";
 
 const VALID_CATEGORIES = ["wantToWatch", "watched", "rewatch"] as const;
 
 const AddToWatchlistSchema = z.object({
   movieId: z.string().trim().min(1, "movieId is required."),
+  // Snapshot from search - used to upsert without a second API call. Optional because we can fetch from Streaming Availability if missing.
+  movie: z
+    .object({
+      title: z.string(),
+      releaseYear: z.number().nullable().optional(),
+      description: z.string().optional(),
+      genre: z.string().optional(),
+      posterUrl: z.string().nullable().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -152,8 +163,8 @@ export async function GET(request: Request) {
  * POST /api/watchlist
  * Requires authentication.
  * Adds movieId to the user's wantToWatch array.
- * Prevents duplicates across wantToWatch / watched / rewatch.
- * Returns the membership result.
+ * If the movie is not in the local catalog yet, fetches it from
+ * Streaming Availability API and upserts it first.
  */
 export async function POST(request: Request) {
   try {
@@ -193,25 +204,46 @@ export async function POST(request: Request) {
       );
     }
 
-    const { movieId } = parsed.data;
+    const { movieId, movie: moviePayload } = parsed.data;
 
-    const db = await getDb();
-    const movieQuery: Record<string, unknown>[] = [{ id: movieId }];
+    if (moviePayload) {
+      await upsertMovie({
+        id: movieId,
+        title: moviePayload.title,
+        releaseYear: moviePayload.releaseYear ?? undefined,
+        overview: moviePayload.description ?? "",
+        genres: moviePayload.genre
+          ? moviePayload.genre.split(", ").map((name) => ({ id: name, name }))
+          : [],
+        imageSet: {
+          verticalPoster: {
+            w240: moviePayload.posterUrl ?? "",
+            w360: moviePayload.posterUrl ?? "",
+            w480: moviePayload.posterUrl ?? "",
+            w600: moviePayload.posterUrl ?? "",
+            w720: moviePayload.posterUrl ?? "",
+          },
+          horizontalPoster: {
+            w360: moviePayload.posterUrl ?? "",
+            w480: moviePayload.posterUrl ?? "",
+            w720: moviePayload.posterUrl ?? "",
+            w1080: moviePayload.posterUrl ?? "",
+            w1440: moviePayload.posterUrl ?? "",
+          },
+        },
+      } as Parameters<typeof upsertMovie>[0]);
+    } else {
+      const movie = await ensureMovieInDb(movieId);
 
-    if (ObjectId.isValid(movieId)) {
-      movieQuery.push({ _id: new ObjectId(movieId) });
+      if (!movie) {
+        return NextResponse.json(
+          { error: "Movie not found." },
+          { status: 404 },
+        );
+      }
     }
 
-    const movie = await db.collection("movies").findOne({ $or: movieQuery });
-
-    if (!movie) {
-      return NextResponse.json({ error: "Movie not found." }, { status: 404 });
-    }
-
-    const resolvedMovieId =
-      typeof movie.id === "string" && movie.id.length > 0
-        ? movie.id
-        : movie._id.toString();
+    const resolvedMovieId = movieId;
 
     const result = await addMovieToWantToWatch(userId, resolvedMovieId);
 
