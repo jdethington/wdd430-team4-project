@@ -112,6 +112,7 @@ _(Or create your own account via the Sign Up page)_
 ---
 
 ## Project Structure
+
 ```
 app/
 ├── api/
@@ -140,6 +141,7 @@ lib/
 ├── users.ts # User data access
 └── watchlist.ts # Watchlist data access
 ```
+
 ---
 
 ## Known Issues / Future Opportunities

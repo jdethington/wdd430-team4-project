@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
 
 export type WatchlistStatus = "wantToWatch" | "watched" | "rewatch" | null;
@@ -34,6 +35,11 @@ interface MovieCardProps {
   onDelete?: (movie: Movie) => void;
 }
 
+function movieHref(movie: Movie): string {
+  const key = movie.id || movie._id;
+  return `/movies/${encodeURIComponent(key)}`;
+}
+
 function statusLabel(status: WatchlistStatus): string {
   if (status === "wantToWatch") return "Want to Watch";
   if (status === "watched") return "Watched";
@@ -58,18 +64,22 @@ export default function MovieCard({
   return (
     <div className="bg-[#2c2c2c] border border-[#f5c518]/20 rounded-md p-5 flex flex-col justify-between hover:border-[#f5c518]/50 transition-colors shadow-md">
       <div>
-        {movie.posterUrl && (
-          <Image
-            src={movie.posterUrl}
-            alt={`${movie.title} poster`}
-            width={500}
-            height={192}
-            loading="eager"
-            className="w-full h-48 object-cover rounded-md mb-3"
-            style={{ width: "100%", height: "auto" }}
-          />
-        )}
-
+        <Link
+          href={movieHref(movie)}
+          className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518] rounded-md"
+        >
+          {movie.posterUrl && (
+            <Image
+              src={movie.posterUrl}
+              alt={`${movie.title} poster`}
+              width={500}
+              height={192}
+              loading="eager"
+              className="w-full h-48 object-cover rounded-md mb-3"
+              style={{ width: "100%", height: "auto" }}
+            />
+          )}
+        </Link>
         <div className="flex justify-between items-start gap-2 mb-2">
           <h3 className="font-serif text-lg font-bold text-[#f5f5f4] leading-tight">
             {movie.title}
