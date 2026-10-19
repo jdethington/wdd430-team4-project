@@ -13,21 +13,6 @@ export default function Footer() {
           </p>
         </div>
 
-        <div className="flex items-center gap-6 text-sm text-[#afb6c2]">
-          <Link
-            href="/login"
-            className="hover:text-[#f5c518] transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/signup"
-            className="hover:text-[#f5c518] transition-colors"
-          >
-            Sign Up
-          </Link>
-        </div>
-
         <p className="text-xs text-[#afb6c2]/60">
           &copy; {new Date().getFullYear()} WatchList. WDD 430 Project.
         </p>
