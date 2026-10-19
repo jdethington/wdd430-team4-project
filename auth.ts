@@ -3,7 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-import { findUserByEmail } from "@/lib/users";
+import { canLogin, findUserByEmail, updateUser } from "@/lib/users";
 
 const CredentialsSchema = z.object({
   email: z.string().email(),
@@ -33,6 +33,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        if (!canLogin(user.status)) return null;
+
         const passwordsMatch = await bcrypt.compare(
           password,
           user.hashedPassword,
@@ -42,10 +44,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        await updateUser(user._id.toString(), { lastLoginAt: new Date() });
+
         return {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
+          role: user.role,
+          status: user.status,
         };
       },
     }),
@@ -60,16 +66,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
+        token.role = user.role;
+        token.status = user.status;
       }
+
+      // After password change (or any session.update()), re-read from DB
+      if (trigger === "update" && token.id) {
+        const { findUserById } = await import("@/lib/users");
+        const dbUser = await findUserById(token.id as string);
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.status = dbUser.status;
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+        }
+      }
+
       return token;
     },
     session({ session, token }) {
-      if (token.id) {
-        session.user.id = token.id as string;
-      }
+      if (token.id) session.user.id = token.id as string;
+      if (token.role) session.user.role = token.role;
+      if (token.status) session.user.status = token.status;
       return session;
     },
   },

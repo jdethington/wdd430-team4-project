@@ -115,6 +115,7 @@ export function findMovieCategory(
 /**
  * Add movieId to wantToWatch.
  * - Creates the user doc if missing.
+ * - If the movie is not in the movies collection, it is added.
  * - Returns { created: true, doc } on success.
  * - Returns { created: false, doc, category } if movie already present in any list.
  */
