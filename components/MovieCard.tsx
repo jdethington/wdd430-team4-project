@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 export type WatchlistStatus = "wantToWatch" | "watched" | "rewatch" | null;
 
@@ -54,25 +55,56 @@ export default function MovieCard({
 }: MovieCardProps) {
   const currentStatus = status ?? movie.status ?? null;
   const alreadyInList = currentStatus !== null;
+  const movieIdentifier =
+    movie.id && movie.id.length > 0 ? movie.id : movie._id;
+  const movieHref = movieIdentifier
+    ? `/movies/${encodeURIComponent(movieIdentifier)}`
+    : null;
 
   return (
     <div className="bg-[#2c2c2c] border border-[#f5c518]/20 rounded-md p-5 flex flex-col justify-between hover:border-[#f5c518]/50 transition-colors shadow-md">
       <div>
         {movie.posterUrl && (
-          <Image
-            src={movie.posterUrl}
-            alt={`${movie.title} poster`}
-            width={500}
-            height={192}
-            loading="eager"
-            className="w-full h-48 object-cover rounded-md mb-3"
-            style={{ width: "100%", height: "auto" }}
-          />
+          movieHref ? (
+            <Link
+              href={movieHref}
+              className="block rounded-md mb-3 focus:outline-none focus:ring-2 focus:ring-[#f5c518]"
+            >
+              <Image
+                src={movie.posterUrl}
+                alt={`${movie.title} poster`}
+                width={500}
+                height={192}
+                loading="eager"
+                className="w-full h-48 object-cover rounded-md"
+                style={{ width: "100%", height: "auto" }}
+              />
+            </Link>
+          ) : (
+            <Image
+              src={movie.posterUrl}
+              alt={`${movie.title} poster`}
+              width={500}
+              height={192}
+              loading="eager"
+              className="w-full h-48 object-cover rounded-md mb-3"
+              style={{ width: "100%", height: "auto" }}
+            />
+          )
         )}
 
         <div className="flex justify-between items-start gap-2 mb-2">
           <h3 className="font-serif text-lg font-bold text-[#f5f5f4] leading-tight">
-            {movie.title}
+            {movieHref ? (
+              <Link
+                href={movieHref}
+                className="hover:text-[#f5c518] transition-colors focus:outline-none focus:ring-2 focus:ring-[#f5c518]"
+              >
+                {movie.title}
+              </Link>
+            ) : (
+              movie.title
+            )}
           </h3>
           {movie.releaseYear && (
             <span className="text-xs bg-[#1a1a1a] text-[#f5c518] px-2 py-1 rounded font-semibold border border-[#f5c518]/20">
