@@ -1,5 +1,6 @@
+// app/api/movies/search/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { searchMoviesByTitle } from "@/lib/movies";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,42 +14,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const db = await getDb();
+    if (!process.env.STREAMING_AVAILABILITY_API_KEY) {
+      return NextResponse.json(
+        { error: "Movie search is not configured." },
+        { status: 503 },
+      );
+    }
 
-    // add an escape function for regex search
-    const escapeRegex = (text: string) =>
-      text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    const movies = await searchMoviesByTitle(query, "us");
 
-    const movies = await db
-      .collection("movies")
-      .find({
-        title: { $regex: escapeRegex(query), $options: "i" },
-      })
-      .limit(20)
-      .toArray();
-
-    const sanitizedMovies = movies.map((movie) => ({
-      id:
-        typeof movie.id === "string" && movie.id.length > 0
-          ? movie.id
-          : movie._id.toString(),
-      _id: movie._id.toString(),
-      title: movie.title ?? "Untitled",
-      releaseYear: movie.releaseYear ?? null,
-      description:
-        movie.overview ??
-        movie.description ??
-        movie.summary ??
-        "No description available.",
-      genre: Array.isArray(movie.genres)
-        ? movie.genres
-            .map((g: { name?: string }) => g.name)
-            .filter(Boolean)
-            .join(", ")
-        : (movie.genre ?? ""),
-      posterUrl: movie.imageSet?.verticalPoster?.w240 ?? null,
-    }));
-    return NextResponse.json({ movies: sanitizedMovies }, { status: 200 });
+    return NextResponse.json({ movies }, { status: 200 });
   } catch (error) {
     console.error("Movie search error:", error);
     return NextResponse.json(
