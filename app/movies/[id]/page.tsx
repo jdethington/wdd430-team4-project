@@ -1,78 +1,69 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { findMovieByRef } from "@/lib/movie-ids";
-import { ensureMovieInDb } from "@/lib/movies";
-// import { getDb } from "@/lib/db";
+import { backdropUrl, getTmdbMovieDetails, posterUrl } from "@/lib/tmdb";
+import { getOrCreateMovieRecord, optionsForCountry } from "@/lib/movies";
 
 type PageProps = {
   params: Promise<{ id: string }>;
 };
 
-async function getMovie(id: string) {
-  // 1. Local DB (imdbId → tmdbId → id)
-  let movie = await findMovieByRef(decodeURIComponent(id));
-
-  // 2. If missing, try Streaming Availability + upsert, then re-read
-  if (!movie) {
-    const ensured = await ensureMovieInDb(decodeURIComponent(id));
-    if (ensured) {
-      movie = await findMovieByRef(ensured.id);
-    }
-  }
-
-  return movie;
-}
+const DEFAULT_COUNTRY = "us"; // TODO: detect country from request headers or user profile
 
 export async function generateMetadata({ params }: PageProps) {
   const { id } = await params;
-  const movie = await getMovie(id);
+  const movie = await getTmdbMovieDetails(decodeURIComponent(id));
   if (!movie) return { title: "Movie not found | WatchList" };
   return {
-    title: `${movie.title}${movie.releaseYear ? ` (${movie.releaseYear})` : ""} | WatchList`,
-    description: movie.overview ?? movie.description ?? undefined,
+    title: `${movie.title}${movie.release_date ? ` (${movie.release_date.slice(0, 4)})` : ""} | WatchList`,
+    description: movie.overview ?? undefined,
   };
 }
 
 export default async function MoviePage({ params }: PageProps) {
   const { id } = await params;
-  const movie = await getMovie(id);
+  const ref = decodeURIComponent(id);
 
-  if (!movie) notFound();
+  // Mongo + MotN (global) when missing or stale
+  const record = await getOrCreateMovieRecord(ref);
 
-  const title = movie.title ?? "Untitled";
-  const year = movie.releaseYear ?? null;
-  const overview =
-    movie.overview ?? movie.description ?? "No description available.";
-  const genres = Array.isArray(movie.genres)
-    ? movie.genres
-        .map((g: { name?: string }) => g.name)
-        .filter(Boolean)
-        .join(", ")
-    : (movie.genre ?? "");
-  const directors = Array.isArray(movie.directors)
-    ? movie.directors.join(", ")
-    : "";
-  const cast = Array.isArray(movie.cast) ? movie.cast.slice(0, 12) : [];
-  const rating =
-    typeof movie.rating === "number" && movie.rating > 0 ? movie.rating : null;
+  // Display metadata always from TMDB
+  const details = await getTmdbMovieDetails(ref);
+  if (!details && !record) notFound();
+
+  const title = details?.title ?? record?.title ?? "Untitled";
+  const year = details?.release_date
+    ? Number(details.release_date.slice(0, 4))
+    : null;
+  const overview = details?.overview || "No description available.";
+  const genres =
+    details?.genres
+      ?.map((g) => g.name)
+      .filter(Boolean)
+      .join(", ") ?? "";
+  const directors =
+    details?.credits?.crew
+      ?.filter((c) => c.job === "Director")
+      .map((c) => c.name)
+      .join(", ") ?? "";
+  const cast =
+    details?.credits?.cast
+      ?.slice()
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .slice(0, 12)
+      .map((c) => c.name) ?? [];
   const runtime =
-    typeof movie.runtime === "number" && movie.runtime > 0
-      ? movie.runtime
+    details?.runtime && details.runtime > 0 ? details.runtime : null;
+  const rating =
+    details?.vote_average != null
+      ? Math.round(details.vote_average * 10)
       : null;
 
-  const backdrop =
-    movie.imageSet?.horizontalBackdrop?.w1440 ||
-    movie.imageSet?.horizontalBackdrop?.w1080 ||
-    movie.imageSet?.horizontalBackdrop?.w720 ||
-    movie.imageSet?.horizontalBackdrop?.w480 ||
-    null;
+  const backdrop = backdropUrl(details?.backdrop_path, "w1280");
+  const poster = posterUrl(details?.poster_path, "w500");
 
-  const poster =
-    movie.imageSet?.verticalPoster?.w480 ||
-    movie.imageSet?.verticalPoster?.w360 ||
-    movie.imageSet?.verticalPoster?.w240 ||
-    null;
+  const country = DEFAULT_COUNTRY;
+  const streamingOptions = optionsForCountry(record, country);
 
   return (
     <main className="min-h-[80vh]">
@@ -165,6 +156,44 @@ export default async function MoviePage({ params }: PageProps) {
                 <p className="text-sm text-[#afb6c2]">{cast.join(" · ")}</p>
               </div>
             )}
+            <section className="pt-4">
+              <h2 className="text-sm font-semibold text-[#f5c518] uppercase tracking-wider mb-3">
+                Where to watch
+              </h2>
+              {streamingOptions.length === 0 ? (
+                <p className="text-sm text-[#afb6c2]">
+                  No streaming options found for this title in{" "}
+                  {country.toUpperCase()}.
+                </p>
+              ) : (
+                <ul className="flex flex-wrap gap-2">
+                  {streamingOptions.map((opt, i) => (
+                    <li key={`${opt.serviceId}-${opt.type}-${i}`}>
+                      {opt.link ? (
+                        <a
+                          href={opt.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-md border border-[#f5c518]/30 bg-[#1a1a1a] px-3 py-2 text-sm text-[#f5f5f4] hover:border-[#f5c518]/60 hover:bg-[#f5c518]/10 transition-colors"
+                        >
+                          <span className="font-semibold text-[#f5c518]">
+                            {opt.serviceName}
+                          </span>
+                          <span className="text-[#afb6c2] text-xs capitalize">
+                            {opt.type}
+                            {opt.quality ? ` · ${opt.quality}` : ""}
+                          </span>
+                        </a>
+                      ) : (
+                        <span className="inline-flex rounded-md border border-[#2c2c2c] px-3 py-2 text-sm text-[#afb6c2]">
+                          {opt.serviceName} ({opt.type})
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
 
             <div className="pt-2 flex flex-wrap gap-3 justify-center md:justify-start">
               <Link

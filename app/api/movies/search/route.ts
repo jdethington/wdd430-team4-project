@@ -1,27 +1,22 @@
 // app/api/movies/search/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { searchMoviesByTitle } from "@/lib/movies";
+import { mapTmdbSearchToMovieResponse, searchTmdbMovies } from "@/lib/tmdb";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q")?.trim();
+    const q = request.nextUrl.searchParams.get("q")?.trim();
 
-    if (!query) {
+    if (!q) {
       return NextResponse.json(
         { error: "Search query parameter 'q' is required" },
         { status: 400 },
       );
     }
 
-    if (!process.env.STREAMING_AVAILABILITY_API_KEY) {
-      return NextResponse.json(
-        { error: "Movie search is not configured." },
-        { status: 503 },
-      );
-    }
-
-    const movies = await searchMoviesByTitle(query, "us");
+    const data = await searchTmdbMovies(q);
+    const movies = (data.results ?? [])
+      .slice(0, 20)
+      .map(mapTmdbSearchToMovieResponse);
 
     return NextResponse.json({ movies }, { status: 200 });
   } catch (error) {
