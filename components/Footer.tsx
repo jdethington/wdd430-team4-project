@@ -14,18 +14,18 @@ export default function Footer() {
         </div>
 
         <div className="flex items-center gap-6 text-sm text-[#afb6c2]">
-          <Link
-            href="/login"
-            className="hover:text-[#f5c518] transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/signup"
-            className="hover:text-[#f5c518] transition-colors"
-          >
-            Sign Up
-          </Link>
+          <p className="text-xs text-[#afb6c2]/80 mt-4">
+            This product uses the TMDB API but is not endorsed or certified by{" "}
+            <a
+              href="https://www.themoviedb.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-[#f5c518]"
+            >
+              TMDB
+            </a>
+            .
+          </p>{" "}
         </div>
 
         <p className="text-xs text-[#afb6c2]/60">

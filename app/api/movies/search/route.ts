@@ -1,54 +1,24 @@
+// app/api/movies/search/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { mapTmdbSearchToMovieResponse, searchTmdbMovies } from "@/lib/tmdb";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q")?.trim();
+    const q = request.nextUrl.searchParams.get("q")?.trim();
 
-    if (!query) {
+    if (!q) {
       return NextResponse.json(
         { error: "Search query parameter 'q' is required" },
         { status: 400 },
       );
     }
 
-    const db = await getDb();
+    const data = await searchTmdbMovies(q);
+    const movies = (data.results ?? [])
+      .slice(0, 20)
+      .map(mapTmdbSearchToMovieResponse);
 
-    // add an escape function for regex search
-    const escapeRegex = (text: string) =>
-      text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-
-    const movies = await db
-      .collection("movies")
-      .find({
-        title: { $regex: escapeRegex(query), $options: "i" },
-      })
-      .limit(20)
-      .toArray();
-
-    const sanitizedMovies = movies.map((movie) => ({
-      id:
-        typeof movie.id === "string" && movie.id.length > 0
-          ? movie.id
-          : movie._id.toString(),
-      _id: movie._id.toString(),
-      title: movie.title ?? "Untitled",
-      releaseYear: movie.releaseYear ?? null,
-      description:
-        movie.overview ??
-        movie.description ??
-        movie.summary ??
-        "No description available.",
-      genre: Array.isArray(movie.genres)
-        ? movie.genres
-            .map((g: { name?: string }) => g.name)
-            .filter(Boolean)
-            .join(", ")
-        : (movie.genre ?? ""),
-      posterUrl: movie.imageSet?.verticalPoster?.w240 ?? null,
-    }));
-    return NextResponse.json({ movies: sanitizedMovies }, { status: 200 });
+    return NextResponse.json({ movies }, { status: 200 });
   } catch (error) {
     console.error("Movie search error:", error);
     return NextResponse.json(
