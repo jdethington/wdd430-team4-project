@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Providers from "@/components/Providers";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -17,10 +18,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-[#1a1a1a] text-[#f5f5f4] min-h-screen flex flex-col antialiased">
-        <Navbar />
-        {/* Flexbox sticky footer - the footer is pushed to the bottom of the screen even on short pages */}
-        <div className="flex-grow">{children}</div>
-        <Footer />
+        <Providers>
+          <Navbar />
+          {/* Flexbox sticky footer - the footer is pushed to the bottom of the screen even on short pages */}
+          <div className="flex-grow">{children}</div>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );

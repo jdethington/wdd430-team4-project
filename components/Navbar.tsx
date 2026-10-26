@@ -1,5 +1,4 @@
 import Link from "next/link";
-
 import { auth } from "@/auth";
 import Button from "./ui/Button";
 import LogoutButton from "./ui/LogoutButton";
@@ -23,9 +22,22 @@ export default async function Navbar() {
                 href="/dashboard"
                 className="text-sm font-medium text-[#afb6c2] hover:text-[#f5c518] transition-colors"
               >
-                {session.user.name ?? "Dashboard"}
+                Dashboard
               </Link>
-
+              <Link
+                href="/account"
+                className="text-sm font-medium text-[#afb6c2] hover:text-[#f5c518] transition-colors"
+              >
+                Account
+              </Link>
+              {session.user.role === "admin" && (
+                <Link
+                  href="/admin/users"
+                  className="text-sm font-medium text-[#afb6c2] hover:text-[#f5c518] transition-colors"
+                >
+                  Admin
+                </Link>
+              )}
               <LogoutButton />
             </>
           ) : (
@@ -36,10 +48,6 @@ export default async function Navbar() {
               >
                 Sign In
               </Link>
-
-              <Button href="/signup" variant="primary">
-                Get Started
-              </Button>
             </>
           )}
         </nav>

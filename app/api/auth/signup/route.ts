@@ -2,26 +2,21 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { MongoServerError } from "mongodb";
-
 import { createUser, findUserByEmail } from "@/lib/users";
 
 const SignupSchema = z.object({
   name: z.string().trim().min(1, "Name is required."),
-
   email: z.string().trim().email("Please enter a valid email address."),
-
   password: z.string().min(8, "Password must be at least 8 characters."),
 });
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
     const result = SignupSchema.safeParse(body);
 
     if (!result.success) {
       const fieldErrors = result.error.flatten().fieldErrors;
-
       return NextResponse.json(
         {
           error: "Please correct the highlighted fields.",
@@ -36,12 +31,10 @@ export async function POST(request: Request) {
     }
 
     const { name, email, password } = result.data;
-
     const normalizedEmail = email.toLowerCase();
-
     const existingUser = await findUserByEmail(normalizedEmail);
 
-    if (existingUser) {
+    if (existingUser && existingUser.status !== "deleted") {
       return NextResponse.json(
         {
           error: "An account with this email already exists.",
@@ -53,8 +46,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    if (existingUser && existingUser.status === "deleted") {
+      return NextResponse.json(
+        {
+          error:
+            "This email is not available. Please contact support if you believe this is an error.",
+          errors: {
+            email:
+              "This email is not available. Please contact support if you believe this is an error.",
+          },
+        },
+        { status: 409 },
+      );
+    }
 
+    const hashedPassword = await bcrypt.hash(password, 12);
     const user = await createUser(name, normalizedEmail, hashedPassword);
 
     if (!user._id) {
@@ -71,6 +77,8 @@ export async function POST(request: Request) {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
+          role: user.role,
+          status: user.status,
         },
       },
       { status: 201 },
