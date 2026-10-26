@@ -5,19 +5,18 @@ import { MongoServerError } from "mongodb";
 import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
 import { addMovieToWantToWatch } from "@/lib/watchlist";
-import { ensureMovieInDb, upsertMovie } from "@/lib/movies";
 import {
-  findMovieByRef,
-  findMoviesByRefs,
-  indexMoviesByAnyId,
-  resolveMovieKey,
-} from "@/lib/movie-ids";
+  hydrateMovieCardFromTmdb,
+  formatTmdbId,
+  getTmdbMovieDetails,
+} from "@/lib/tmdb";
 
 const VALID_CATEGORIES = ["wantToWatch", "watched", "rewatch"] as const;
 
 const AddToWatchlistSchema = z.object({
   movieId: z.string().trim().min(1, "movieId is required."),
   // Snapshot from search — optional; used to avoid a second API call when possible.
+  // Optional UI snapshot — NOT written to movies collection
   movie: z
     .object({
       title: z.string(),
@@ -25,8 +24,6 @@ const AddToWatchlistSchema = z.object({
       description: z.string().optional(),
       genre: z.string().optional(),
       posterUrl: z.string().nullable().optional(),
-      imdbId: z.string().optional(),
-      tmdbId: z.string().optional(),
     })
     .optional(),
 });
@@ -36,6 +33,9 @@ const AddToWatchlistSchema = z.object({
  * Requires authentication.
  * Returns the user's watchlist movies organized by category.
  * Optional query: ?category=wantToWatch|watched|rewatch
+ *
+ * Hydrates each watchlist id from TMDB for card display.
+ * Does not read or write the movies collection for card payloads.
  */
 export async function GET(request: Request) {
   const session = await auth();
@@ -79,62 +79,58 @@ export async function GET(request: Request) {
     const wantToWatchIds: string[] = watchlistDoc.wantToWatch || [];
     const watchedIds: string[] = watchlistDoc.watched || [];
     const rewatchIds: string[] = watchlistDoc.rewatch || [];
-
     const allIds = [
       ...new Set([...wantToWatchIds, ...watchedIds, ...rewatchIds]),
     ];
 
-    // Match stored refs against imdbId, tmdbId, or id
-    const movies = await findMoviesByRefs(allIds);
-    const movieMap = indexMoviesByAnyId(movies);
-
     const reviews: Record<string, { rating?: number; review?: string }> =
       watchlistDoc.reviews ?? {};
 
-    const sanitizeMovie = (movie: (typeof movies)[number]) => {
-      const id = resolveMovieKey(movie); // imdbId → tmdbId → id
-      const reviewData =
-        reviews[id] ??
-        reviews[String(movie.imdbId ?? "")] ??
-        reviews[String(movie.tmdbId ?? "")] ??
-        reviews[String(movie.id ?? "")] ??
-        {};
+    // TMDB hydrate (no Mongo movies write)
+    const cardByRef = new Map<
+      string,
+      Awaited<ReturnType<typeof hydrateMovieCardFromTmdb>>
+    >();
 
-      return {
-        _id: movie._id.toString(),
-        id, // preferred stable key for the client / future writes
-        title: movie.title ?? "Untitled",
-        releaseYear: movie.releaseYear ?? null,
-        description:
-          movie.overview ?? movie.description ?? "No description available.",
-        genre: Array.isArray(movie.genres)
-          ? movie.genres
-              .map((g: { name?: string }) => g.name)
-              .filter(Boolean)
-              .join(", ")
-          : (movie.genre ?? ""),
-        posterUrl: movie.imageSet?.verticalPoster?.w240 ?? null,
-        rating: reviewData.rating,
-        review: reviewData.review,
-      };
-    };
+    for (const ref of allIds) {
+      const card = await hydrateMovieCardFromTmdb(ref);
+      if (card) {
+        cardByRef.set(ref, card);
+        // Also index by resolved ids so review keys still match
+        cardByRef.set(card.id, card);
+        if (card.tmdbId) cardByRef.set(card.tmdbId, card);
+        if (card.imdbId) cardByRef.set(card.imdbId, card);
+      }
+    }
 
-    const getMovies = (ids: string[]) =>
+    const buildList = (ids: string[]) =>
       ids
-        .map((ref) => movieMap.get(ref))
-        .filter((movie): movie is NonNullable<typeof movie> => movie != null)
-        .map(sanitizeMovie);
+        .map((ref) => {
+          const card = cardByRef.get(ref);
+          if (!card) return null;
+          const reviewData =
+            reviews[ref] ??
+            reviews[card.id] ??
+            reviews[card.tmdbId] ??
+            reviews[card.imdbId] ??
+            {};
+          return {
+            ...card,
+            rating: reviewData.rating,
+            review: reviewData.review,
+          };
+        })
+        .filter(Boolean);
 
     if (category) {
       return NextResponse.json({
-        [category]: getMovies(watchlistDoc[category] || []),
+        [category]: buildList(watchlistDoc[category] || []),
       });
     }
-
     return NextResponse.json({
-      wantToWatch: getMovies(wantToWatchIds),
-      watched: getMovies(watchedIds),
-      rewatch: getMovies(rewatchIds),
+      wantToWatch: buildList(wantToWatchIds),
+      watched: buildList(watchedIds),
+      rewatch: buildList(rewatchIds),
     });
   } catch (error) {
     console.error("Error fetching watchlist:", error);
@@ -148,13 +144,12 @@ export async function GET(request: Request) {
 /**
  * POST /api/watchlist
  * Requires authentication.
- * Ensures the movie exists locally (upsert from payload or Streaming Availability),
- * then adds the preferred stable id (imdbId → tmdbId → id) to wantToWatch.
+ * Adds movieId to wantToWatch only.
+ * Does NOT upsert into movies (that happens on detail view).
  */
 export async function POST(request: Request) {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Authentication required" },
@@ -175,80 +170,31 @@ export async function POST(request: Request) {
     }
 
     const parsed = AddToWatchlistSchema.safeParse(body);
-
     if (!parsed.success) {
       const fieldErrors = parsed.error.flatten().fieldErrors;
       return NextResponse.json(
         {
           error: "Please correct the highlighted fields.",
-          errors: {
-            movieId: fieldErrors.movieId?.[0] ?? "",
-          },
+          errors: { movieId: fieldErrors.movieId?.[0] ?? "" },
         },
         { status: 400 },
       );
     }
 
-    const { movieId, movie: moviePayload } = parsed.data;
+    const { movieId } = parsed.data;
 
-    // Prefer an existing local document matched by imdbId → tmdbId → id
-    let movieDoc = await findMovieByRef(movieId);
-
-    if (!movieDoc && moviePayload) {
-      // Upsert from search snapshot when we don't have a full DB row yet.
-      // Prefer ids from the payload when present; fall back to movieId.
-      await upsertMovie({
-        id: movieId,
-        imdbId: moviePayload.imdbId,
-        tmdbId: moviePayload.tmdbId,
-        title: moviePayload.title,
-        releaseYear: moviePayload.releaseYear ?? undefined,
-        overview: moviePayload.description ?? "",
-        genres: moviePayload.genre
-          ? moviePayload.genre.split(", ").map((name) => ({
-              id: name.toLowerCase(),
-              name,
-            }))
-          : [],
-        imageSet: {
-          verticalPoster: {
-            w240: moviePayload.posterUrl ?? "",
-            w360: moviePayload.posterUrl ?? "",
-            w480: moviePayload.posterUrl ?? "",
-            w600: moviePayload.posterUrl ?? "",
-            w720: moviePayload.posterUrl ?? "",
-          },
-          horizontalPoster: {
-            w360: moviePayload.posterUrl ?? "",
-            w480: moviePayload.posterUrl ?? "",
-            w720: moviePayload.posterUrl ?? "",
-            w1080: moviePayload.posterUrl ?? "",
-            w1440: moviePayload.posterUrl ?? "",
-          },
-        },
-      } as Parameters<typeof upsertMovie>[0]);
-
-      movieDoc = await findMovieByRef(movieId);
-    }
-
-    if (!movieDoc) {
-      // Full fetch + upsert from Streaming Availability
-      const ensured = await ensureMovieInDb(movieId);
-      if (!ensured) {
-        return NextResponse.json(
-          { error: "Movie not found." },
-          { status: 404 },
-        );
+    // Prefer stable key: imdb if TMDB knows it, else tmdb id
+    let resolvedMovieId = movieId;
+    try {
+      const details = await getTmdbMovieDetails(movieId);
+      if (details) {
+        const imdbId = details.imdb_id || details.external_ids?.imdb_id || "";
+        const tmdbId = formatTmdbId(details.id);
+        resolvedMovieId = imdbId || tmdbId;
       }
-      movieDoc = await findMovieByRef(movieId);
+    } catch {
+      // keep client movieId
     }
-
-    if (!movieDoc) {
-      return NextResponse.json({ error: "Movie not found." }, { status: 404 });
-    }
-
-    // Stable key for watchlist membership: imdbId → tmdbId → id
-    const resolvedMovieId = resolveMovieKey(movieDoc);
 
     const result = await addMovieToWantToWatch(userId, resolvedMovieId);
 
@@ -279,16 +225,7 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
-
-    if (error instanceof MongoServerError && error.code === 121) {
-      console.error(
-        "Movie document failed validation:",
-        JSON.stringify(error.errInfo, null, 2),
-      );
-    }
-
     console.error("Add to watchlist error:", error);
-
     return NextResponse.json(
       { error: "Unable to add movie to watchlist. Please try again." },
       { status: 500 },
