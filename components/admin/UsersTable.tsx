@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import EditUserModal from "@/components/admin/EditUserModal";
+import ConfirmModal from "@/components/ConfirmModal";
 
 type PublicUser = {
   id: string;
@@ -12,20 +13,55 @@ type PublicUser = {
   createdAt: string;
 };
 
+type PendingAction =
+  | { type: "reset"; user: PublicUser }
+  | { type: "delete"; user: PublicUser }
+  | null;
+
+function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    active: "bg-green-500/15 text-green-300 border-green-500/30",
+    password_reset: "bg-[#f5c518]/15 text-[#f5c518] border-[#f5c518]/30",
+    inactive: "bg-[#afb6c2]/15 text-[#afb6c2] border-[#afb6c2]/30",
+    banned: "bg-red-500/15 text-red-300 border-red-500/30",
+    deleted: "bg-red-900/30 text-red-400 border-red-500/20",
+  };
+  const className =
+    styles[status] ?? "bg-[#2c2c2c] text-[#afb6c2] border-[#afb6c2]/20";
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${className}`}
+    >
+      {status.replace(/_/g, " ")}
+    </span>
+  );
+}
+
 export default function UsersTable() {
   const [users, setUsers] = useState<PublicUser[]>([]);
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState<PublicUser | null>(null);
+  const [pending, setPending] = useState<PendingAction>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  // Debounce search input
+  useEffect(() => {
+    const id = window.setTimeout(() => setDebouncedQ(q), 300);
+    return () => window.clearTimeout(id);
+  }, [q]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (q.trim()) params.set("q", q.trim());
+      if (debouncedQ.trim()) params.set("q", debouncedQ.trim());
       if (includeDeleted) params.set("includeDeleted", "1");
       const res = await fetch(`/api/admin/users?${params}`);
       const data = await res.json();
@@ -36,85 +72,147 @@ export default function UsersTable() {
     } finally {
       setLoading(false);
     }
-  }, [q, includeDeleted]);
+  }, [debouncedQ, includeDeleted]);
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      void load();
-    }, 0);
-
-    return () => window.clearTimeout(timeout);
+    void load();
   }, [load]);
 
-  async function resetPassword(id: string) {
-    if (!confirm("Require this user to set a new password on next login?"))
-      return;
-    const res = await fetch(`/api/admin/users/${id}/reset-password`, {
-      method: "POST",
-    });
-    if (res.ok) void load();
-  }
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 3500);
+    return () => window.clearTimeout(id);
+  }, [toast]);
 
-  async function removeUser(id: string) {
-    if (!confirm("Soft-delete this user? They will not be able to sign in."))
-      return;
-    const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
-    if (res.ok) void load();
-    else {
-      const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Delete failed");
+  async function runPendingAction() {
+    if (!pending) return;
+    setActionLoading(true);
+    try {
+      if (pending.type === "reset") {
+        const res = await fetch(
+          `/api/admin/users/${pending.user.id}/reset-password`,
+          { method: "POST" },
+        );
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setError(data.error ?? "Reset password failed");
+          return;
+        }
+        setToast(`Password reset required for ${pending.user.name}.`);
+      } else {
+        const res = await fetch(`/api/admin/users/${pending.user.id}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          setError(data.error ?? "Delete failed");
+          return;
+        }
+        setToast(`${pending.user.name} was soft-deleted.`);
+      }
+      setPending(null);
+      void load();
+    } catch {
+      setError("Network error.");
+    } finally {
+      setActionLoading(false);
     }
   }
 
   return (
     <div className="space-y-4">
+      {toast && (
+        <div
+          className="rounded-md border border-green-500/40 bg-green-500/10 px-4 py-3 text-sm text-green-300"
+          role="status"
+        >
+          {toast}
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search name or email..."
-          className="flex-1 rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4]"
+          className="flex-1 rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4] focus:outline-none focus:ring-2 focus:ring-[#f5c518]/40"
+          aria-label="Search users by name or email"
         />
         <label className="flex items-center gap-2 text-sm text-[#afb6c2]">
           <input
             type="checkbox"
             checked={includeDeleted}
             onChange={(e) => setIncludeDeleted(e.target.checked)}
+            className="rounded border-[#f5c518]/30"
           />
           Include deleted
         </label>
         <button
           type="button"
           onClick={() => void load()}
-          className="rounded-md bg-[#f5c518] px-4 py-2 text-sm font-bold text-[#1a1a1a]"
+          className="rounded-md bg-[#f5c518] px-4 py-2 text-sm font-bold text-[#1a1a1a] hover:bg-[#d4a713] transition-colors"
         >
           Refresh
         </button>
       </div>
 
       {loading && <p className="text-[#afb6c2]">Loading...</p>}
-      {error && <p className="text-red-400">{error}</p>}
+      {error && (
+        <div
+          className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+          role="alert"
+        >
+          {error}
+        </div>
+      )}
 
-      {!loading && !error && (
+      {!loading && !error && users.length === 0 && (
+        <div className="rounded-md border border-[#f5c518]/20 bg-[#2c2c2c] px-6 py-10 text-center">
+          <p className="text-[#f5f5f4] font-medium">No users found</p>
+          <p className="text-sm text-[#afb6c2] mt-1">
+            {debouncedQ
+              ? "Try a different search term or clear the filter."
+              : "There are no users to display yet."}
+          </p>
+        </div>
+      )}
+
+      {!loading && !error && users.length > 0 && (
         <div className="overflow-x-auto rounded-md border border-[#f5c518]/20">
           <table className="min-w-full text-sm text-left">
             <thead className="bg-[#2c2c2c] text-[#afb6c2]">
               <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3 font-medium">Name</th>
+                <th className="px-4 py-3 font-medium">Email</th>
+                <th className="px-4 py-3 font-medium">Role</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
               {users.map((u) => (
-                <tr key={u.id} className="border-t border-[#2c2c2c]">
+                <tr
+                  key={u.id}
+                  className="border-t border-[#2c2c2c] hover:bg-[#2c2c2c]/50 transition-colors"
+                >
                   <td className="px-4 py-3 text-[#f5f5f4]">{u.name}</td>
                   <td className="px-4 py-3 text-[#afb6c2]">{u.email}</td>
-                  <td className="px-4 py-3 text-[#f5c518]">{u.role}</td>
-                  <td className="px-4 py-3 text-[#afb6c2]">{u.status}</td>
-                  <td className="px-4 py-3 space-x-2 whitespace-nowrap">
+                  <td className="px-4 py-3">
+                    <span
+                      className={
+                        u.role === "admin"
+                          ? "text-[#f5c518] font-medium"
+                          : "text-[#afb6c2]"
+                      }
+                    >
+                      {u.role}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <StatusBadge status={u.status} />
+                  </td>
+                  <td className="px-4 py-3 space-x-3 whitespace-nowrap">
                     <button
                       type="button"
                       className="text-[#f5c518] hover:underline"
@@ -125,14 +223,14 @@ export default function UsersTable() {
                     <button
                       type="button"
                       className="text-[#afb6c2] hover:underline"
-                      onClick={() => void resetPassword(u.id)}
+                      onClick={() => setPending({ type: "reset", user: u })}
                     >
                       Reset password
                     </button>
                     <button
                       type="button"
                       className="text-red-400 hover:underline"
-                      onClick={() => void removeUser(u.id)}
+                      onClick={() => setPending({ type: "delete", user: u })}
                     >
                       Delete
                     </button>
@@ -150,10 +248,41 @@ export default function UsersTable() {
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
+            setToast(`Updated ${editing.name}.`);
             void load();
           }}
         />
       )}
+
+      <ConfirmModal
+        isOpen={pending?.type === "reset"}
+        title="Reset password"
+        message={
+          pending
+            ? `Require ${pending.user.name} to set a new password on next login?`
+            : ""
+        }
+        confirmLabel="Reset password"
+        loadingLabel="Resetting..."
+        isLoading={actionLoading}
+        onConfirm={() => void runPendingAction()}
+        onCancel={() => setPending(null)}
+      />
+
+      <ConfirmModal
+        isOpen={pending?.type === "delete"}
+        title="Delete user"
+        message={
+          pending
+            ? `Soft-delete ${pending.user.name}? They will not be able to sign in.`
+            : ""
+        }
+        confirmLabel="Delete"
+        loadingLabel="Deleting..."
+        isLoading={actionLoading}
+        onConfirm={() => void runPendingAction()}
+        onCancel={() => setPending(null)}
+      />
     </div>
   );
 }
