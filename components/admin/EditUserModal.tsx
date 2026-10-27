@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type PublicUser = {
   id: string;
@@ -26,8 +26,18 @@ export default function EditUserModal({
   const [confirmRoleChange, setConfirmRoleChange] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const firstFieldRef = useRef<HTMLInputElement>(null);
 
   const roleChanged = role !== user.role;
+
+  useEffect(() => {
+    firstFieldRef.current?.focus();
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !loading) onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose, loading]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,31 +69,49 @@ export default function EditUserModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-md rounded-md bg-[#2c2c2c] border border-[#f5c518]/30 p-6 space-y-4">
-        <h2 className="text-lg font-bold text-[#f5f5f4]">Edit user</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/70"
+        onClick={loading ? undefined : onClose}
+        aria-hidden="true"
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-user-title"
+        className="relative w-full max-w-md rounded-md bg-[#2c2c2c] border border-[#f5c518]/30 p-6 space-y-4 shadow-2xl"
+      >
+        <h2 id="edit-user-title" className="text-lg font-bold text-[#f5f5f4]">
+          Edit user
+        </h2>
         <form onSubmit={onSubmit} className="space-y-3">
-          <label className="block text-sm text-[#afb6c2]">
+          <label htmlFor="edit-name" className="block text-sm text-[#afb6c2]">
             Name
             <input
-              className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4]"
+              id="edit-name"
+              ref={firstFieldRef}
+              className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4] focus:outline-none focus:ring-2 focus:ring-[#f5c518]/40"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              required
             />
           </label>
-          <label className="block text-sm text-[#afb6c2]">
+          <label htmlFor="edit-email" className="block text-sm text-[#afb6c2]">
             Email
             <input
+              id="edit-email"
               type="email"
-              className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4]"
+              className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4] focus:outline-none focus:ring-2 focus:ring-[#f5c518]/40"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </label>
-          <label className="block text-sm text-[#afb6c2]">
+          <label htmlFor="edit-role" className="block text-sm text-[#afb6c2]">
             Role
             <select
-              className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4]"
+              id="edit-role"
+              className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4] focus:outline-none focus:ring-2 focus:ring-[#f5c518]/40"
               value={role}
               onChange={(e) => {
                 setRole(e.target.value as "user" | "admin");
@@ -100,15 +128,19 @@ export default function EditUserModal({
                 type="checkbox"
                 checked={confirmRoleChange}
                 onChange={(e) => setConfirmRoleChange(e.target.checked)}
+                className="mt-0.5"
               />
-              I confirm changing this user&apos;s role from{" "}
-              <strong>{user.role}</strong> to <strong>{role}</strong>.
+              <span>
+                I confirm changing this user's role from{" "}
+                <strong>{user.role}</strong> to <strong>{role}</strong>.
+              </span>
             </label>
           )}
-          <label className="block text-sm text-[#afb6c2]">
+          <label htmlFor="edit-status" className="block text-sm text-[#afb6c2]">
             Status
             <select
-              className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4]"
+              id="edit-status"
+              className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4] focus:outline-none focus:ring-2 focus:ring-[#f5c518]/40"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
             >
@@ -118,19 +150,24 @@ export default function EditUserModal({
               <option value="banned">banned</option>
             </select>
           </label>
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && (
+            <p className="text-sm text-red-400" role="alert">
+              {error}
+            </p>
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-[#f5c518]/30 px-4 py-2 text-sm text-[#f5c518]"
+              disabled={loading}
+              className="rounded-md border border-[#f5c518]/30 px-4 py-2 text-sm text-[#f5c518] hover:bg-[#f5c518]/10 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || (roleChanged && !confirmRoleChange)}
-              className="rounded-md bg-[#f5c518] px-4 py-2 text-sm font-bold text-[#1a1a1a] disabled:opacity-50"
+              className="rounded-md bg-[#f5c518] px-4 py-2 text-sm font-bold text-[#1a1a1a] hover:bg-[#d4a713] transition-colors disabled:opacity-50"
             >
               {loading ? "Saving..." : "Save"}
             </button>
