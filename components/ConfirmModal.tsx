@@ -9,6 +9,10 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   isLoading?: boolean;
+  /** Label for the destructive/primary confirm button. Defaults to "Remove". */
+  confirmLabel?: string;
+  /** Label shown while loading. Defaults to "Working...". */
+  loadingLabel?: string;
 }
 
 export default function ConfirmModal({
@@ -18,12 +22,14 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
   isLoading = false,
+  confirmLabel = "Remove",
+  loadingLabel = "Working...",
 }: ConfirmModalProps) {
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!isOpen || isLoading) return;
-    if (isOpen) cancelRef.current?.focus();
+    cancelRef.current?.focus();
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onCancel();
@@ -41,6 +47,7 @@ export default function ConfirmModal({
       <div
         className="absolute inset-0 bg-black/70"
         onClick={isLoading ? undefined : onCancel}
+        aria-hidden="true"
       />
       {/* Modal */}
       <div
@@ -65,6 +72,7 @@ export default function ConfirmModal({
         <div className="flex gap-3">
           <button
             ref={cancelRef}
+            type="button"
             onClick={onCancel}
             disabled={isLoading}
             className="flex-1 px-4 py-2 border border-[#afb6c2]/30 text-[#afb6c2] text-sm font-semibold rounded-sm hover:border-[#afb6c2]/60 transition-colors disabled:opacity-50"
@@ -72,11 +80,12 @@ export default function ConfirmModal({
             Cancel
           </button>
           <button
+            type="button"
             onClick={onConfirm}
             disabled={isLoading}
             className="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-sm hover:bg-red-700 transition-colors disabled:opacity-50"
           >
-            {isLoading ? "Removing..." : "Remove"}
+            {isLoading ? loadingLabel : confirmLabel}
           </button>
         </div>
       </div>
