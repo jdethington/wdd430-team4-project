@@ -12,10 +12,12 @@ type PublicUser = {
 
 export default function EditUserModal({
   user,
+  isLastAdmin = false,
   onClose,
   onSaved,
 }: {
   user: PublicUser;
+  isLastAdmin?: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -29,6 +31,7 @@ export default function EditUserModal({
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
   const roleChanged = role !== user.role;
+  const demoteBlocked = isLastAdmin && user.role === "admin";
 
   useEffect(() => {
     firstFieldRef.current?.focus();
@@ -111,8 +114,9 @@ export default function EditUserModal({
             Role
             <select
               id="edit-role"
-              className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4] focus:outline-none focus:ring-2 focus:ring-[#f5c518]/40"
+              className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4] focus:outline-none focus:ring-2 focus:ring-[#f5c518]/40 disabled:opacity-50"
               value={role}
+              disabled={demoteBlocked}
               onChange={(e) => {
                 setRole(e.target.value as "user" | "admin");
                 setConfirmRoleChange(false);
@@ -122,7 +126,13 @@ export default function EditUserModal({
               <option value="admin">admin</option>
             </select>
           </label>
-          {roleChanged && (
+          {demoteBlocked && (
+            <p className="text-xs text-[#afb6c2]">
+              This is the only admin. Promote another user before demoting this
+              account.
+            </p>
+          )}
+          {roleChanged && !demoteBlocked && (
             <label className="flex items-start gap-2 text-sm text-[#f5c518]">
               <input
                 type="checkbox"
@@ -131,7 +141,7 @@ export default function EditUserModal({
                 className="mt-0.5"
               />
               <span>
-                I confirm changing this user's role from{" "}
+                I confirm changing this user&apos;s role from{" "}
                 <strong>{user.role}</strong> to <strong>{role}</strong>.
               </span>
             </label>
@@ -166,7 +176,9 @@ export default function EditUserModal({
             </button>
             <button
               type="submit"
-              disabled={loading || (roleChanged && !confirmRoleChange)}
+              disabled={
+                loading || (roleChanged && !confirmRoleChange && !demoteBlocked)
+              }
               className="rounded-md bg-[#f5c518] px-4 py-2 text-sm font-bold text-[#1a1a1a] hover:bg-[#d4a713] transition-colors disabled:opacity-50"
             >
               {loading ? "Saving..." : "Save"}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 
 export default function ProfileForm({
@@ -12,6 +13,7 @@ export default function ProfileForm({
   initialEmail: string;
 }) {
   const { update } = useSession();
+  const router = useRouter();
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -39,7 +41,8 @@ export default function ProfileForm({
         setError(data.error ?? "Update failed.");
         return;
       }
-      await update(); // Keep the session up to date with the new name/email
+      await update();
+      router.refresh();
       setMessage("Profile updated.");
       setCurrentPassword("");
     } catch {

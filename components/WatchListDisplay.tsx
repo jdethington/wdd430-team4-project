@@ -11,6 +11,7 @@ import {
   type WatchlistCategory,
 } from "@/components/WatchlistContext";
 import ConfirmModal from "@/components/ConfirmModal";
+import CardSkeleton from "@/components/ui/CardSkeleton";
 
 export default function WatchlistDisplay() {
   const {
@@ -119,9 +120,10 @@ export default function WatchlistDisplay() {
 
   if (loading) {
     return (
-      <p className="text-[#afb6c2] text-center py-12">
-        Loading your watchlist...
-      </p>
+      <div className="space-y-4">
+        <div className="h-6 bg-[#2c2c2c] rounded w-48 animate-pulse" />
+        <CardSkeleton count={4} />
+      </div>
     );
   }
 

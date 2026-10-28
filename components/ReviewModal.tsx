@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ReviewModalProps {
   movieTitle: string;
@@ -34,6 +34,43 @@ function ReviewModalContent({
   const [review, setReview] = useState<string>(initialReview);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isSubmitting) {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+
+      const focusable = panelRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      previouslyFocused?.focus?.();
+    };
+  }, [onClose, isSubmitting]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,8 +92,14 @@ function ReviewModalContent({
       aria-modal="true"
       aria-labelledby="review-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) onClose();
+      }}
     >
-      <div className="bg-[#2c2c2c] border border-[#f5c518]/30 rounded-lg p-6 max-w-md w-full shadow-2xl text-[#f5f5f4]">
+      <div
+        ref={panelRef}
+        className="bg-[#2c2c2c] border border-[#f5c518]/30 rounded-lg p-6 max-w-md w-full shadow-2xl text-[#f5f5f4]"
+      >
         <div className="flex justify-between items-start mb-4">
           <h2
             id="review-modal-title"
@@ -65,6 +108,7 @@ function ReviewModalContent({
             Review & Rating
           </h2>
           <button
+            ref={closeRef}
             type="button"
             onClick={onClose}
             className="text-[#afb6c2] hover:text-[#f5f5f4] text-xl leading-none"

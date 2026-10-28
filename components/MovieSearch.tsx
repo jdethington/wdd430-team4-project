@@ -125,13 +125,31 @@ export default function MovieSearch() {
     <div className="w-full space-y-6">
       {/* Search Input & Submit Form */}
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-        <input
-          type="text"
-          placeholder="Search movies by title..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 bg-[#1a1a1a] text-[#f5f5f4] placeholder-[#afb6c2]/60 border border-[#f5c518]/30 rounded-md px-4 py-3 focus:outline-none focus:border-[#f5c518] transition-colors"
-        />
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Search movies by title..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-[#1a1a1a] text-[#f5f5f4] placeholder-[#afb6c2]/60 border border-[#f5c518]/30 rounded-md px-4 py-3 pr-10 focus:outline-none focus:border-[#f5c518] transition-colors"
+          />
+          {searchTerm.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm("");
+                setResults([]);
+                setHasSearched(false);
+                setErrorMessage(null);
+                setLastQuery("");
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#afb6c2] hover:text-[#f5c518] text-lg leading-none p-1"
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
         <button
           type="submit"
           disabled={loading || !searchTerm.trim()}
