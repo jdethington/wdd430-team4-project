@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import ReviewModal from "@/components/ReviewModal";
 import ConfirmModal from "@/components/ConfirmModal";
+import Toast from "@/components/ui/Toast";
 
 type WatchlistStatus = "wantToWatch" | "watched" | "rewatch";
 
@@ -59,6 +60,7 @@ export default function MovieWatchlistControls({
   const [error, setError] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (sessionStatus === "unauthenticated") {
@@ -126,6 +128,7 @@ export default function MovieWatchlistControls({
       const data = await res.json().catch(() => ({}));
       if (res.status === 201) {
         setStatus("wantToWatch");
+        setToast("Added to your watchlist");
         return;
       }
       if (res.status === 409 && data.category) {
@@ -157,6 +160,7 @@ export default function MovieWatchlistControls({
         setError(data.error ?? "Could not update list.");
         return;
       }
+      setToast(`Moved to ${STATUS_LABELS[next]}`);
       if (next === "watched") {
         setReviewOpen(true);
       }
@@ -179,6 +183,7 @@ export default function MovieWatchlistControls({
     }
     setRating(data.rating);
     setReview(data.review);
+    setToast("Review saved");
   }
 
   async function handleRemove() {
@@ -197,6 +202,7 @@ export default function MovieWatchlistControls({
       setRating(undefined);
       setReview(undefined);
       setRemoveOpen(false);
+      setToast("Removed from your watchlist");
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -314,6 +320,7 @@ export default function MovieWatchlistControls({
         onConfirm={() => void handleRemove()}
         onCancel={() => setRemoveOpen(false)}
       />
+      <Toast message={toast} onDismiss={() => setToast(null)} />
     </div>
   );
 }

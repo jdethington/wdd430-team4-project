@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
 import { z } from "zod";
+import { safeCallbackUrl } from "@/lib/auth-redirect";
 
 const SignupSchema = z
   .object({
@@ -38,6 +39,9 @@ type FormErrors = {
 
 export default function Signup() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
+  const showGateMessage = Boolean(searchParams.get("callbackUrl"));
 
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -151,10 +155,11 @@ export default function Signup() {
         setServerError(
           "Account created, but automatic sign in failed. Please log in.",
         );
+        router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
         return;
       }
 
-      router.push("/dashboard");
+      router.push(callbackUrl);
       router.refresh();
     } catch {
       setServerError("Unable to connect to the server. Please try again.");
@@ -165,6 +170,16 @@ export default function Signup() {
 
   return (
     <main className="relative overflow-hidden min-h-[80vh] flex items-center justify-center px-4">
+      {showGateMessage && (
+        <div
+          className="border border-[#f5c518]/30 bg-[#f5c518]/10 rounded-sm p-3 mb-4"
+          role="status"
+        >
+          <p className="text-sm text-[#f5f5f4]">
+            Create an account to continue.
+          </p>
+        </div>
+      )}
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center gap-4 mb-8">
           <div className="h-[1px] w-12 bg-[#f5c518]" />
@@ -346,7 +361,11 @@ export default function Signup() {
           <p className="text-center text-sm text-[#afb6c2] pt-2">
             Already have an account?{" "}
             <Link
-              href="/login"
+              href={
+                showGateMessage
+                  ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                  : "/login"
+              }
               className="text-[#f5c518] hover:underline font-medium"
             >
               Sign in

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import MovieCard, { Movie } from "./MovieCard";
 import { useWatchlist } from "@/components/WatchlistContext";
+import Toast from "./ui/Toast";
 
 function movieKey(movie: { id?: string; _id: string }): string {
   return movie.id && movie.id.length > 0 ? movie.id : movie._id;
@@ -21,6 +22,7 @@ export default function MovieSearch() {
 
   const [addingId, setAddingId] = useState<string | null>(null);
   const [addErrors, setAddErrors] = useState<Map<string, string>>(new Map());
+  const [toast, setToast] = useState<string | null>(null);
 
   const fetchMovies = async (query: string) => {
     setLoading(true);
@@ -95,6 +97,7 @@ export default function MovieSearch() {
       const data = await res.json().catch(() => ({}));
 
       if (res.status === 201 || res.status === 409) {
+        setToast("Added to Want to Watch");
         return;
       }
 
@@ -215,6 +218,7 @@ export default function MovieSearch() {
           </div>
         </div>
       )}
+      <Toast message={toast} onDismiss={() => setToast(null)} />
     </div>
   );
 }
