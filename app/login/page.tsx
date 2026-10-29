@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { z } from "zod";
 
@@ -16,8 +16,17 @@ const LoginSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters."),
 });
 
+function safeCallbackUrl(value: string | null, fallback = "/dashboard") {
+  if (!value) return fallback;
+  if (!value.startsWith("/") || value.startsWith("//")) return fallback;
+  return value;
+}
+
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
+  const showGateMessage = Boolean(searchParams.get("callbackUrl"));
 
   const [formData, setFormData] = useState({
     email: "",
@@ -98,7 +107,7 @@ export default function Login() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push(callbackUrl);
     router.refresh();
   }
 
@@ -119,6 +128,15 @@ export default function Login() {
           noValidate
           className="bg-[#2c2c2c] border border-[#2c2c2c] rounded-sm p-8 space-y-5 shadow-lg"
         >
+          {showGateMessage && (
+            <div
+              className="border border-[#f5c518]/30 bg-[#f5c518]/10 rounded-sm p-3"
+              role="status"
+            >
+              <p className="text-sm text-[#f5f5f4]">Sign in to continue.</p>
+            </div>
+          )}
+
           {/* General authentication error */}
           {errors.general && (
             <div
@@ -215,7 +233,11 @@ export default function Login() {
           <p className="text-center text-sm text-[#afb6c2] pt-2">
             Don&apos;t have an account?{" "}
             <Link
-              href="/signup"
+              href={
+                showGateMessage
+                  ? `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                  : "/signup"
+              }
               className="text-[#f5c518] hover:underline font-medium"
             >
               Create one

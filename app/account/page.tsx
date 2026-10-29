@@ -4,7 +4,7 @@ import AccountPageClient from "@/components/account/AccountPageClient";
 
 export default async function AccountPage() {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user) redirect("/login?callbackUrl=/account");
 
   return (
     <main className="min-h-[80vh] px-4 py-12">

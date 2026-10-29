@@ -1,6 +1,6 @@
 # WatchList 🎬
 
-A personal movie collection manager for film fans. Search movies, organize them into "Want to Watch," "Watched," and "Want to Rewatch" categories, manage ratings and reviews, and control your collection from a personal dashboard.
+A personal movie collection manager for film fans. Search movies, organize them into **Want to Watch**, **Watched**, and **Want to Rewatch**, rate and review titles, and manage your account from a responsive dashboard.
 
 **Live Demo:** [watch-list-theta.vercel.app](https://watch-list-theta.vercel.app/)
 
@@ -19,27 +19,51 @@ A personal movie collection manager for film fans. Search movies, organize them 
 
 ## Features
 
-- **Authentication** — Sign up and sign in with email and password
-- **Movie Search** — Search a curated catalog of 29 films by title
-- **Personal Dashboard** — View your collection organized by category
-- **Add to Watchlist** — Add any movie to your Want to Watch list
-- **Move Between Categories** — Change a movie's status between Want to Watch, Watched, and Want to Rewatch
-- **Ratings & Reviews** — Rate movies and add personal review notes
-- **Remove from Watchlist** — Remove movies with a confirmation modal
-- **Protected Routes** — Dashboard requires authentication
+### Core watchlist
+
+- **Authentication** — Email/password sign up and sign in (Auth.js v5)
+- **Movie search** — Search via TMDB-backed catalog
+- **Personal dashboard** — Collection grouped by Want to Watch, Watched, and Want to Rewatch
+- **Add / move / remove** — Full watchlist lifecycle with confirmation modals
+- **Ratings & reviews** — Star ratings and notes; review prompt when moving to Watched
+- **Movie detail pages** — Poster, overview, cast, runtime, and where-to-watch options
+- **Protected routes** — Dashboard, account, and admin require authentication; login supports `callbackUrl`
+
+### Account
+
+- Update name and email (with current password confirmation)
+- Change password
+- Soft-delete account
+
+### Admin (role: `admin`)
+
+- List/search users, including soft-deleted
+- Edit name, email, role, and status
+- Force password reset
+- Soft-delete users (cannot delete or demote the last admin)
+
+### UX
+
+- Responsive layout with mobile nav (hamburger)
+- Mobile-friendly admin user cards
+- Loading skeletons, image fallbacks, and improved modal focus handling
 
 ---
 
 ## Tech Stack
 
-- **Framework:** Next.js 15+ (App Router)
-- **Language:** TypeScript
-- **Database:** MongoDB Atlas
-- **Authentication:** Auth.js v5 (Credentials provider)
-- **Styling:** Tailwind CSS
-- **Validation:** Zod
-- **Formatting:** Prettier
-- **Deployment:** Vercel
+| Layer                  | Choice                     |
+| ---------------------- | -------------------------- |
+| Framework              | Next.js 16 (App Router)    |
+| Language               | TypeScript                 |
+| Database               | MongoDB Atlas              |
+| Auth                   | Auth.js v5 (Credentials)   |
+| Movie data             | TMDB API                   |
+| Streaming availability | Streaming Availability API |
+| Styling                | Tailwind CSS               |
+| Validation             | Zod                        |
+| Formatting             | Prettier                   |
+| Deployment             | Vercel                     |
 
 ---
 
@@ -48,8 +72,10 @@ A personal movie collection manager for film fans. Search movies, organize them 
 ### Prerequisites
 
 - Node.js 18+
-- A MongoDB Atlas account
-- A Vercel account (for deployment)
+- MongoDB Atlas account
+- TMDB API access token
+- Streaming Availability API key (optional; for where-to-watch)
+- Vercel account (for deployment)
 
 ### Installation
 
@@ -61,12 +87,24 @@ npm install
 
 ### Environment Variables
 
-Create a `.env.local` file in the project root:
+Copy `.env.example` to `.env.local` and fill in values:
 
 ```env
 MONGODB_URI=your_mongodb_connection_string
 MONGODB_DB=your_database_name
+
 AUTH_SECRET=your_auth_secret
+# Optional alias used in some setups:
+SESSION_SECRET=your_session_secret
+
+# TMDB (search + movie details) — API Read Access Token (Bearer)
+TMDB_ACCESS_TOKEN=your_tmdb_access_token
+# Optional fallback:
+TMDB_API_KEY=your_tmdb_api_key
+
+# Streaming Availability (where-to-watch)
+STREAMING_AVAILABILITY_API_KEY=your_key
+RAPIDAPI_STREAMING_AVAILABILITY_API_KEY=your_rapidapi_key
 ```
 
 Generate `AUTH_SECRET` with:
@@ -85,29 +123,32 @@ Visit [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## API Routes
-
-| Method | Endpoint                        | Auth     | Description                                |
-| ------ | ------------------------------- | -------- | ------------------------------------------ |
-| GET    | `/api/movies/search?q={query}`  | No       | Search movie catalog by title              |
-| GET    | `/api/watchlist`                | Required | Get user's watchlist organized by category |
-| GET    | `/api/watchlist?category={cat}` | Required | Filter watchlist by category               |
-| POST   | `/api/watchlist`                | Required | Add movie to Want to Watch                 |
-| PATCH  | `/api/watchlist/{itemId}`       | Required | Update movie category or add rating/review |
-| DELETE | `/api/watchlist/{itemId}`       | Required | Remove movie from watchlist                |
-
----
-
 ## Demo Credentials
-
-To test the app without creating an account:
 
 | Field    | Value            |
 | -------- | ---------------- |
 | Email    | demo@example.com |
 | Password | password123      |
 
-_(Or create your own account via the Sign Up page)_
+Or create an account on the Sign Up page.
+
+---
+
+## API Routes
+
+| Method           | Endpoint                               | Auth     | Description                      |
+| ---------------- | -------------------------------------- | -------- | -------------------------------- |
+| GET              | `/api/movies/search?q={query}`         | No       | Search movies by title           |
+| GET              | `/api/watchlist`                       | Required | User watchlist by category       |
+| GET              | `/api/watchlist?category={cat}`        | Required | Filter by category               |
+| POST             | `/api/watchlist`                       | Required | Add movie to Want to Watch       |
+| PATCH            | `/api/watchlist/{itemId}`              | Required | Update status, rating, or review |
+| DELETE           | `/api/watchlist/{itemId}`              | Required | Remove from watchlist            |
+| GET/PATCH/DELETE | `/api/account`                         | Required | Profile read/update/delete       |
+| PATCH            | `/api/account/password`                | Required | Change password                  |
+| GET              | `/api/admin/users`                     | Admin    | List/search users                |
+| GET/PATCH/DELETE | `/api/admin/users/{id}`                | Admin    | User admin operations            |
+| POST             | `/api/admin/users/{id}/reset-password` | Admin    | Require password reset           |
 
 ---
 
@@ -116,55 +157,72 @@ _(Or create your own account via the Sign Up page)_
 ```
 app/
 ├── api/
-│ ├── auth/ # Auth.js route handlers
-│ ├── movies/search/ # Movie search endpoint
-│ └── watchlist/ # Watchlist CRUD endpoints
-│ └── [itemId]/ # PATCH and DELETE by movie id
-├── dashboard/ # Protected user dashboard
-├── login/ # Login page
-├── signup/ # Registration page
-└── types/ # TypeScript declarations
+│   ├── account/          # Profile & password
+│   ├── admin/users/      # Admin user management
+│   ├── auth/             # Auth.js + signup
+│   ├── movies/search/    # Movie search
+│   └── watchlist/        # Watchlist CRUD
+├── account/              # User account UI
+├── admin/users/          # Admin UI
+├── dashboard/            # Protected dashboard
+├── login/ · signup/
+├── movies/[id]/         # Movie detail
+└── page.tsx              # Marketing home + preview
+
 components/
-├── ui/
-│ └── Button.tsx # Reusable button component
-├── ConfirmModal.tsx # Delete confirmation modal
-├── DashboardClient.tsx # Client wrapper for dashboard
-├── Footer.tsx # Site footer
-├── MovieCard.tsx # Movie display card
-├── MovieSearch.tsx # Search interface
-├── Navbar.tsx # Site navigation
-├── ReviewModal.tsx # Rating and review modal
-├── WatchlistContext.tsx # Shared watchlist state
-└── WatchListDisplay.tsx # Dashboard watchlist sections
+├── account/              # Profile, password, delete account
+├── admin/                # Users table, edit modal
+├── ui/                   # Button, Toast, CardSkeleton, LogoutButton
+├── ConfirmModal.tsx
+├── MovieCard.tsx
+├── MovieCast.tsx
+├── MovieSearch.tsx
+├── MovieWatchlistControls.tsx
+├── Navbar.tsx / NavbarClient.tsx
+├── ReviewModal.tsx
+├── WatchlistContext.tsx
+└── WatchListDisplay.tsx
+
 lib/
-├── db.ts # MongoDB connection
-├── users.ts # User data access
-└── watchlist.ts # Watchlist data access
+├── db.ts · users.ts · watchlist.ts
+├── tmdb.ts · movies.ts · streaming.ts
+└── authz.ts · auth-redirect.ts
+
+auth.ts · middleware.ts
 ```
-
----
-
-## Known Issues / Future Opportunities
-
-- Movie catalog is seeded with 29 films — future versions would connect to a live external movie API
-- Watchlist categories are fixed — future versions could support custom lists
 
 ---
 
 ## Development
 
-### Branch Naming
-
-Feature branches named by feature: `feature/feature-name`
-
-### Code Quality
+### Scripts
 
 ```bash
-npm run lint      # ESLint
-npm run format    # Prettier
-npm run build     # TypeScript check + production build
+npm run dev           # Development server
+npm run lint          # ESLint
+npm run format        # Prettier write
+npm run format:check  # Prettier check
+npm run build         # Production build + typecheck
 ```
+
+### Branch naming
+
+Feature branches: `feature/feature-name` or topic branches such as `polish/account-admin-ux`.
 
 ---
 
-_Built with Next.js · Deployed on Vercel_
+## Known limitations / future ideas
+
+- Watchlist categories are fixed (three lists); custom lists are a possible extension
+- Streaming availability depends on external API coverage by country
+- Shared toast component exists; not every action surface uses it yet
+- Next.js 16 may warn about the `middleware` file convention (`proxy` migration)
+
+---
+
+_Built with Next.js · Deployed on Vercel_  
+_This product uses the TMDB API but is not endorsed or certified by TMDB._
+
+```
+
+```

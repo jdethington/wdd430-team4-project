@@ -11,6 +11,8 @@ import {
   type WatchlistCategory,
 } from "@/components/WatchlistContext";
 import ConfirmModal from "@/components/ConfirmModal";
+import CardSkeleton from "@/components/ui/CardSkeleton";
+import Toast from "@/components/ui/Toast";
 
 export default function WatchlistDisplay() {
   const {
@@ -30,6 +32,7 @@ export default function WatchlistDisplay() {
   const [movieToDelete, setMovieToDelete] = useState<Movie | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   // Helper to resolve MongoDB _id or id
   const getMovieId = (movie: Movie) => movie.id || movie._id || "";
@@ -61,6 +64,7 @@ export default function WatchlistDisplay() {
         // Optional UX polish: prompt review when moving to Watched
         setActiveReviewMovie({ ...movie, status: newStatus });
       }
+      setToast(`Moved to ${newStatus}`);
     } catch {
       await refresh();
     } finally {
@@ -88,6 +92,7 @@ export default function WatchlistDisplay() {
       if (!res.ok) {
         await refresh();
       }
+      setToast("Review saved");
     } catch {
       await refresh();
     }
@@ -109,6 +114,7 @@ export default function WatchlistDisplay() {
       });
       if (!response.ok) throw new Error("Failed to delete");
       setMovieToDelete(null);
+      setToast("Removed from your watchlist");
       await refresh();
     } catch {
       setDeleteError("Failed to remove movie. Please try again.");
@@ -119,9 +125,10 @@ export default function WatchlistDisplay() {
 
   if (loading) {
     return (
-      <p className="text-[#afb6c2] text-center py-12">
-        Loading your watchlist...
-      </p>
+      <div className="space-y-4">
+        <div className="h-6 bg-[#2c2c2c] rounded w-48 animate-pulse" />
+        <CardSkeleton count={4} />
+      </div>
     );
   }
 
@@ -278,6 +285,7 @@ export default function WatchlistDisplay() {
           onSubmit={handleSaveReview}
         />
       </div>
+      <Toast message={toast} onDismiss={() => setToast(null)} />
     </>
   );
 }

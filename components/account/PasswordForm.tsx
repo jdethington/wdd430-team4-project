@@ -45,6 +45,7 @@ export default function PasswordForm({
       setCurrentPassword("");
       setNewPassword("");
       setConfirm("");
+      onPasswordUpdated?.();
       router.refresh();
     } catch {
       setError("Network error.");
@@ -71,41 +72,51 @@ export default function PasswordForm({
           {error}
         </div>
       )}
-      <label className="block text-sm text-[#afb6c2]">
+      <label
+        htmlFor="password-current"
+        className="block text-sm text-[#afb6c2]"
+      >
         Current password
         <input
+          id="password-current"
           type="password"
-          className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4]"
+          className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4] focus:outline-none focus:ring-2 focus:ring-[#f5c518]/40"
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
           required
           minLength={8}
+          autoComplete="current-password"
         />
       </label>
-      <label className="block text-sm text-[#afb6c2]">
+      <label htmlFor="password-new" className="block text-sm text-[#afb6c2]">
         New password
         <input
+          id="password-new"
           type="password"
-          className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4]"
+          className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4] focus:outline-none focus:ring-2 focus:ring-[#f5c518]/40"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           required
           minLength={8}
+          autoComplete="new-password"
         />
       </label>
-      <label className="block text-sm text-[#afb6c2]">
+      <label
+        htmlFor="password-confirm"
+        className="block text-sm text-[#afb6c2]"
+      >
         Confirm new password
         <input
+          id="password-confirm"
           type="password"
-          className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4]"
+          className="mt-1 w-full rounded-md bg-[#1a1a1a] border border-[#f5c518]/20 px-3 py-2 text-[#f5f5f4] focus:outline-none focus:ring-2 focus:ring-[#f5c518]/40"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           required
           minLength={8}
+          autoComplete="new-password"
         />
       </label>
-      {/* {error && <p className="text-sm text-red-400">{error}</p>}
-      {message && <p className="text-sm text-[#f5c518]">{message}</p>} */}
       <Button type="submit" variant="primary" disabled={loading}>
         {loading ? "Updating..." : "Update password"}
       </Button>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -60,6 +61,7 @@ export default function MovieCard({
 }: MovieCardProps) {
   const currentStatus = status ?? movie.status ?? null;
   const alreadyInList = currentStatus !== null;
+  const [imgFailed, setImgFailed] = useState(false);
 
   return (
     <div className="bg-[#2c2c2c] border border-[#f5c518]/20 rounded-md p-5 flex flex-col justify-between hover:border-[#f5c518]/50 transition-colors shadow-md">
@@ -68,7 +70,7 @@ export default function MovieCard({
           href={movieHref(movie)}
           className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f5c518] rounded-md"
         >
-          {movie.posterUrl && (
+          {movie.posterUrl && !imgFailed ? (
             <Image
               src={movie.posterUrl}
               alt={`${movie.title} poster`}
@@ -77,8 +79,13 @@ export default function MovieCard({
               loading="eager"
               className="w-full h-48 object-cover rounded-md mb-3"
               style={{ width: "100%", height: "auto" }}
+              onError={() => setImgFailed(true)}
             />
-          )}
+          ) : (
+            <div className="w-full h-48 mb-3 rounded-md bg-[#1a1a1a] border border-[#f5c518]/10 flex items-center justify-center text-xs text-[#afb6c2]">
+              No poster
+            </div>
+          )}{" "}
         </Link>
         <div className="flex justify-between items-start gap-2 mb-2">
           <h3 className="font-serif text-lg font-bold text-[#f5f5f4] leading-tight">
@@ -96,10 +103,6 @@ export default function MovieCard({
             {movie.genre}
           </p>
         )}
-
-        <p className="text-[#afb6c2] text-sm line-clamp-3">
-          {movie.description}
-        </p>
 
         {/* Existing rating & review snippet if present */}
         {(movie.rating || movie.review) && (

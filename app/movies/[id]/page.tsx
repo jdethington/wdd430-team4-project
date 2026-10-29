@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { backdropUrl, getTmdbMovieDetails, posterUrl } from "@/lib/tmdb";
 import { getOrCreateMovieRecord, optionsForCountry } from "@/lib/movies";
+import MovieWatchlistControls from "@/components/MovieWatchlistControls";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -195,7 +196,8 @@ export default async function MoviePage({ params }: PageProps) {
               )}
             </section>
 
-            <div className="pt-2 flex flex-wrap gap-3 justify-center md:justify-start">
+            <div className="pt-2 flex flex-col sm:flex-row flex-wrap gap-3 items-center justify-center md:justify-start">
+              <MovieWatchlistControls movieId={ref} movieTitle={title} />{" "}
               <Link
                 href="/dashboard"
                 className="inline-flex items-center rounded-md border border-[#f5c518]/40 px-4 py-2 text-sm font-semibold text-[#f5c518] hover:bg-[#f5c518]/10 transition-colors focus:outline-none focus:ring-2 focus:ring-[#f5c518]"
