@@ -6,6 +6,7 @@ export async function proxy(request: NextRequest) {
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === "production",
   });
 
   const { pathname } = request.nextUrl;
@@ -27,7 +28,11 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith("/admin")) {
     if (!token?.id || token.role !== "admin") {
       const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
+      // Optional: send logged-out users to login instead of dashboard
+      url.pathname = token?.id ? "/dashboard" : "/login";
+      if (!token?.id) {
+        url.searchParams.set("callbackUrl", pathname);
+      }
       return NextResponse.redirect(url);
     }
   }
